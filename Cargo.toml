@@ -1,0 +1,17 @@
+[package]
+name = "trollup_sequencer"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.66"
+ethers = "1.0.0"
+futures = "0.3.25"
+hyper = "0.14.23"
+jsonrpsee = { version = "0.16.0", features = ["server", "jsonrpsee-server"] }
+serde = "1.0.147"
+tokio = { version = "1.21.2", features = ["full"] }
+tower = { version = "0.4.13", features = ["full"] }
+tower-http = { version = "0.3.4", features = ["full"] }
