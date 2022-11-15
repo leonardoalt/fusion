@@ -1,11 +1,22 @@
-use std::{path::Path, net::SocketAddr, sync::{Arc, Mutex}, time::Duration};
+use std::{
+    net::SocketAddr,
+    path::Path,
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 
-use ethers::{providers::{Provider, Http}, abi::Address};
+use ethers::{
+    abi::Address,
+    providers::{Http, Provider},
+};
 use hyper::Method;
-use jsonrpsee::{server::{ServerBuilder, AllowHosts, ServerHandle}, RpcModule};
-use serde::{Serialize, Deserialize};
+use jsonrpsee::{
+    server::{AllowHosts, ServerBuilder, ServerHandle},
+    RpcModule,
+};
+use serde::{Deserialize, Serialize};
 use tokio::{task, time::interval};
-use tower_http::cors::{CorsLayer, Any};
+use tower_http::cors::{Any, CorsLayer};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Tx {
@@ -39,9 +50,9 @@ async fn main() -> anyhow::Result<()> {
 
     tokio::spawn(rpc.stopped());
 
-	println!("Run the following snippet in the developer console in any Website.");
-	println!(
-		r#"
+    println!("Run the following snippet in the developer console in any Website.");
+    println!(
+        r#"
         fetch("http://{}", {{
             method: 'POST',
             mode: 'cors',
@@ -63,8 +74,8 @@ async fn main() -> anyhow::Result<()> {
             console.log("Response Body:", body)
         }});
     "#,
-		SERVER_ADDRESS
-	);
+        SERVER_ADDRESS
+    );
 
     futures::future::pending().await
 }
@@ -74,39 +85,36 @@ fn init_db(path: &Path) -> Db {
 }
 
 fn init_l1(db: Db) -> Provider<Http> {
-    Provider::<Http>::try_from(
-        "https://mainnet.infura.io/v3/YOUR_API_KEY"
-    ).unwrap()
+    Provider::<Http>::try_from("https://mainnet.infura.io/v3/YOUR_API_KEY").unwrap()
 }
 
 async fn init_rpc(db: Db) -> anyhow::Result<ServerHandle> {
+    let cors = CorsLayer::new()
+        // Allow `POST` when accessing the resource
+        .allow_methods([Method::POST])
+        // Allow requests from any origin
+        .allow_origin(Any)
+        .allow_headers([hyper::header::CONTENT_TYPE]);
+    let middleware = tower::ServiceBuilder::new().layer(cors);
 
-	let cors = CorsLayer::new()
-		// Allow `POST` when accessing the resource
-		.allow_methods([Method::POST])
-		// Allow requests from any origin
-		.allow_origin(Any)
-		.allow_headers([hyper::header::CONTENT_TYPE]);
-	let middleware = tower::ServiceBuilder::new().layer(cors);
-
-	let server = ServerBuilder::default()
-    .set_host_filtering(AllowHosts::Any)
-    .set_middleware(middleware)
-		.build(SERVER_ADDRESS.parse::<SocketAddr>()?)
-		.await?;
+    let server = ServerBuilder::default()
+        .set_host_filtering(AllowHosts::Any)
+        .set_middleware(middleware)
+        .build(SERVER_ADDRESS.parse::<SocketAddr>()?)
+        .await?;
 
     println!("{}", server.local_addr().unwrap());
 
-	let mut module = RpcModule::new(());
-	module.register_method("submit_transaction", move |params, _| {
-		println!("received transaction!");
+    let mut module = RpcModule::new(());
+    module.register_method("submit_transaction", move |params, _| {
+        println!("received transaction!");
         let tx: Tx = params.parse()?;
         let mut db = db.lock().unwrap();
         db.push(tx);
-		Ok("Transaction received!")
-	})?;
+        Ok("Transaction received!")
+    })?;
 
-	let handle = server.start(module)?;
+    let handle = server.start(module)?;
 
     Ok(handle)
 }

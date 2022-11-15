@@ -10,8 +10,8 @@ anyhow = "1.0.66"
 ethers = "1.0.0"
 futures = "0.3.25"
 hyper = "0.14.23"
-jsonrpsee = { version = "0.16.0", features = ["server", "jsonrpsee-server"] }
+jsonrpsee = { version = "0.16.0", features = ["server"] }
 serde = "1.0.147"
-tokio = { version = "1.21.2", features = ["full"] }
-tower = { version = "0.4.13", features = ["full"] }
-tower-http = { version = "0.3.4", features = ["full"] }
+tokio = "1.21.2"
+tower = "0.4.13"
+tower-http = { version = "0.3.4", features = ["cors"] }
