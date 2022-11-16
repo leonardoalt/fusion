@@ -5,9 +5,14 @@ use std::{
     time::Duration,
 };
 
+use clap::{Parser, Subcommand};
 use ethers::{
     abi::Address,
+    core::k256::SecretKey,
     providers::{Http, Provider},
+    signers::{LocalWallet, Signer},
+    types,
+    utils::keccak256,
 };
 use hyper::Method;
 use jsonrpsee::{
@@ -30,8 +35,64 @@ type Db = Arc<Mutex<Vec<Tx>>>;
 const DB_PATH: &str = "./db";
 const SERVER_ADDRESS: &str = "127.0.0.1:0";
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
+#[derive(Debug, Parser)]
+#[clap(name = "trollup sequencer", version = env!("CARGO_PKG_VERSION"))]
+struct Opts {
+    #[clap(subcommand)]
+    pub sub: Option<Subcommands>,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum Subcommands {
+    #[clap(about = "Sign a trollup transaction.")]
+    Sign(TrollupTx),
+}
+
+#[derive(Debug, Clone, Parser, Default)]
+pub struct TrollupTx {
+    #[clap(
+        long,
+        short = 'p',
+        value_name = "PRIVATE_KEY",
+        help = "The private key that signs the message",
+        default_value = "0x0000000000000000000000000000000000000000000000000000000000000000"
+    )]
+    pub private_key: ethers::types::H256,
+    #[clap(
+        long,
+        short = 'f',
+        value_name = "FROM_ADDRESS",
+        help = "The address of the from address.",
+        default_value = "0x0000000000000000000000000000000000000000"
+    )]
+    pub from: ethers::types::Address,
+    #[clap(
+        long,
+        short = 't',
+        value_name = "DEST_ADDRESS",
+        help = "The address of the destination address.",
+        default_value = "0x0000000000000000000000000000000000000000"
+    )]
+    pub to: ethers::types::Address,
+    #[clap(
+        long,
+        short = 'n',
+        value_name = "NONCE",
+        help = "The nonce of the transaction.",
+        default_value = "0"
+    )]
+    pub nonce: ethers::types::U256,
+    #[clap(
+        long,
+        short = 'v',
+        value_name = "VALUE",
+        help = "The value of the transaction.",
+        default_value = "0"
+    )]
+    pub value: ethers::types::U256,
+}
+
+async fn run_node() -> anyhow::Result<()> {
     let db_path = Path::new(DB_PATH);
     let db = init_db(db_path);
     let rpc = init_rpc(db.clone()).await.unwrap();
@@ -78,6 +139,52 @@ async fn main() -> anyhow::Result<()> {
     );
 
     futures::future::pending().await
+}
+
+fn hash_tx(sig_args: &TrollupTx) -> ethers::types::TxHash {
+    let mut value_bytes = vec![0; 32];
+    sig_args.value.to_big_endian(&mut value_bytes);
+
+    let mut nonce_bytes = vec![0; 32];
+    sig_args.nonce.to_big_endian(&mut nonce_bytes);
+
+    let msg = [
+        sig_args.from.as_fixed_bytes().to_vec(),
+        sig_args.to.as_fixed_bytes().to_vec(),
+        value_bytes,
+        nonce_bytes,
+    ]
+    .concat();
+
+    types::TxHash::from(keccak256(msg))
+}
+
+async fn sign(sig_args: TrollupTx) -> anyhow::Result<()> {
+    let wallet: LocalWallet = SecretKey::from_be_bytes(&sig_args.private_key.as_bytes())
+        .expect("invalid private key")
+        .into();
+
+    let hash = hash_tx(&sig_args).as_fixed_bytes().to_vec();
+    let signature = wallet.sign_message(hash.clone()).await?;
+    println!("{}", signature);
+
+    Ok(())
+}
+
+fn verify_tx_signature(tx: TrollupTx, signature: types::Signature) -> anyhow::Result<()> {
+    let hash = hash_tx(&tx).as_fixed_bytes().to_vec();
+    signature.verify(hash, tx.from)?;
+
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let opts = Opts::parse();
+    match opts.sub {
+        Some(Subcommands::Sign(sig_args)) => sign(sig_args).await,
+        _ => run_node().await,
+    }
 }
 
 fn init_db(path: &Path) -> Db {
