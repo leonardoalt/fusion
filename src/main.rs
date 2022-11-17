@@ -12,6 +12,7 @@ use ethers::{
     providers::{Http, Provider},
     signers::{LocalWallet, Signer},
     types,
+    types::Signature,
     utils::keccak256,
 };
 use hyper::Method;
@@ -27,10 +28,43 @@ use tower_http::cors::{Any, CorsLayer};
 struct Tx {
     from: Address,
     to: Address,
-    amount: u32,
-    // signature: todo :)
+    nonce: types::U256,
+    value: types::U256,
 }
-type Db = Arc<Mutex<Vec<Tx>>>;
+
+impl From<CLITx> for Tx {
+    fn from(tx: CLITx) -> Self {
+        Self {
+            from: tx.from,
+            to: tx.to,
+            nonce: tx.nonce,
+            value: tx.value,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct SignedTx {
+    tx: Tx,
+    //signature: types::Signature
+    signature: String
+}
+
+impl From<CLITx> for SignedTx {
+    fn from(tx: CLITx) -> Self {
+        Self {
+            tx: Tx {
+                from: tx.from,
+                to: tx.to,
+                nonce: tx.nonce,
+                value: tx.value,
+            },
+            signature: tx.signature.unwrap()
+        }
+    }
+}
+
+type Db = Arc<Mutex<Vec<SignedTx>>>;
 
 const DB_PATH: &str = "./db";
 const SERVER_ADDRESS: &str = "127.0.0.1:0";
@@ -45,11 +79,13 @@ struct Opts {
 #[derive(Debug, Subcommand)]
 pub enum Subcommands {
     #[clap(about = "Sign a trollup transaction.")]
-    Sign(TrollupTx),
+    Sign(CLITx),
+    #[clap(about = "Send trollup transaction, potentially sign it before.")]
+    Send(CLITx),
 }
 
 #[derive(Debug, Clone, Parser, Default)]
-pub struct TrollupTx {
+pub struct CLITx {
     #[clap(
         long,
         short = 'p',
@@ -76,6 +112,14 @@ pub struct TrollupTx {
     pub to: ethers::types::Address,
     #[clap(
         long,
+        short = 'v',
+        value_name = "VALUE",
+        help = "The value of the transaction.",
+        default_value = "0"
+    )]
+    pub value: ethers::types::U256,
+    #[clap(
+        long,
         short = 'n',
         value_name = "NONCE",
         help = "The nonce of the transaction.",
@@ -84,12 +128,13 @@ pub struct TrollupTx {
     pub nonce: ethers::types::U256,
     #[clap(
         long,
-        short = 'v',
-        value_name = "VALUE",
-        help = "The value of the transaction.",
-        default_value = "0"
+        short = 's',
+        value_name = "SIGNATURE",
+        help = "The signed transaction.",
+        default_value = ""
     )]
-    pub value: ethers::types::U256,
+    pub signature: Option<String>,
+
 }
 
 async fn run_node() -> anyhow::Result<()> {
@@ -141,7 +186,7 @@ async fn run_node() -> anyhow::Result<()> {
     futures::future::pending().await
 }
 
-fn hash_tx(sig_args: &TrollupTx) -> ethers::types::TxHash {
+fn hash_tx(sig_args: &Tx) -> ethers::types::TxHash {
     let mut value_bytes = vec![0; 32];
     sig_args.value.to_big_endian(&mut value_bytes);
 
@@ -159,21 +204,37 @@ fn hash_tx(sig_args: &TrollupTx) -> ethers::types::TxHash {
     types::TxHash::from(keccak256(msg))
 }
 
-async fn sign(sig_args: TrollupTx) -> anyhow::Result<()> {
+async fn sign(sig_args: CLITx) -> anyhow::Result<types::Signature> {
     let wallet: LocalWallet = SecretKey::from_be_bytes(&sig_args.private_key.as_bytes())
         .expect("invalid private key")
         .into();
 
-    let hash = hash_tx(&sig_args).as_fixed_bytes().to_vec();
+    let hash = hash_tx(&sig_args.into()).as_fixed_bytes().to_vec();
     let signature = wallet.sign_message(hash.clone()).await?;
-    println!("{}", signature);
+
+    Ok(signature)
+}
+
+fn verify_tx_signature(signed_tx: SignedTx) -> anyhow::Result<()> {
+    let hash = hash_tx(&signed_tx.tx).as_fixed_bytes().to_vec();
+    let decoded = signed_tx.signature.parse::<types::Signature>()?;
+    decoded.verify(hash, signed_tx.tx.from)?;
 
     Ok(())
 }
 
-fn verify_tx_signature(tx: TrollupTx, signature: types::Signature) -> anyhow::Result<()> {
-    let hash = hash_tx(&tx).as_fixed_bytes().to_vec();
-    signature.verify(hash, tx.from)?;
+async fn send(send_args: CLITx) -> anyhow::Result<()> {
+    let signed: SignedTx = if send_args.signature.is_some() {
+        send_args.into()
+    } else {
+        SignedTx {
+            tx: send_args.clone().into(),
+            signature: sign(send_args).await?.to_string()
+        }
+    };
+
+    verify_tx_signature(signed)?;
+    // TODO send RPC msg to the L2 node with `signed`
 
     Ok(())
 }
@@ -182,7 +243,12 @@ fn verify_tx_signature(tx: TrollupTx, signature: types::Signature) -> anyhow::Re
 async fn main() -> anyhow::Result<()> {
     let opts = Opts::parse();
     match opts.sub {
-        Some(Subcommands::Sign(sig_args)) => sign(sig_args).await,
+        Some(Subcommands::Sign(sig_args)) => {
+            let signature = sign(sig_args).await?;
+            println!("{}", signature);
+            Ok(())
+        },
+        Some(Subcommands::Send(send_args)) => send(send_args).await,
         _ => run_node().await,
     }
 }
@@ -215,7 +281,8 @@ async fn init_rpc(db: Db) -> anyhow::Result<ServerHandle> {
     let mut module = RpcModule::new(());
     module.register_method("submit_transaction", move |params, _| {
         println!("received transaction!");
-        let tx: Tx = params.parse()?;
+        let tx: SignedTx = params.parse()?;
+        // TODO verify signed transaction
         let mut db = db.lock().unwrap();
         db.push(tx);
         Ok("Transaction received!")
