@@ -12,7 +12,6 @@ use ethers::{
     providers::{Http, Provider},
     signers::{LocalWallet, Signer},
     types,
-    types::Signature,
     utils::keccak256,
 };
 use hyper::Method;
@@ -46,8 +45,7 @@ impl From<CLITx> for Tx {
 #[derive(Debug, Serialize, Deserialize)]
 struct SignedTx {
     tx: Tx,
-    //signature: types::Signature
-    signature: String
+    signature: String,
 }
 
 impl From<CLITx> for SignedTx {
@@ -59,7 +57,7 @@ impl From<CLITx> for SignedTx {
                 nonce: tx.nonce,
                 value: tx.value,
             },
-            signature: tx.signature.unwrap()
+            signature: tx.signature.unwrap(),
         }
     }
 }
@@ -134,7 +132,6 @@ pub struct CLITx {
         default_value = ""
     )]
     pub signature: Option<String>,
-
 }
 
 async fn run_node() -> anyhow::Result<()> {
@@ -205,7 +202,7 @@ fn hash_tx(sig_args: &Tx) -> ethers::types::TxHash {
 }
 
 async fn sign(sig_args: CLITx) -> anyhow::Result<types::Signature> {
-    let wallet: LocalWallet = SecretKey::from_be_bytes(&sig_args.private_key.as_bytes())
+    let wallet: LocalWallet = SecretKey::from_be_bytes(sig_args.private_key.as_bytes())
         .expect("invalid private key")
         .into();
 
@@ -229,7 +226,7 @@ async fn send(send_args: CLITx) -> anyhow::Result<()> {
     } else {
         SignedTx {
             tx: send_args.clone().into(),
-            signature: sign(send_args).await?.to_string()
+            signature: sign(send_args).await?.to_string(),
         }
     };
 
@@ -247,7 +244,7 @@ async fn main() -> anyhow::Result<()> {
             let signature = sign(sig_args).await?;
             println!("{}", signature);
             Ok(())
-        },
+        }
         Some(Subcommands::Send(send_args)) => send(send_args).await,
         _ => run_node().await,
     }
