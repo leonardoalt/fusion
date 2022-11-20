@@ -23,6 +23,8 @@ use serde::{Deserialize, Serialize};
 use tokio::{task, time::interval};
 use tower_http::cors::{Any, CorsLayer};
 
+mod node;
+
 #[derive(Debug, Serialize, Deserialize)]
 struct Tx {
     from: Address,
@@ -65,7 +67,8 @@ impl From<CLITx> for SignedTx {
 type Db = Arc<Mutex<Vec<SignedTx>>>;
 
 const DB_PATH: &str = "./db";
-const SERVER_ADDRESS: &str = "127.0.0.1:0";
+const SOCKET_ADDRESS: &str = "127.0.0.1:38171";
+const SERVER_ADDRESS: &str = "http://localhost:38171";
 
 #[derive(Debug, Parser)]
 #[clap(name = "trollup sequencer", version = env!("CARGO_PKG_VERSION"))]
@@ -177,7 +180,7 @@ async fn run_node() -> anyhow::Result<()> {
             console.log("Response Body:", body)
         }});
     "#,
-        SERVER_ADDRESS
+        SOCKET_ADDRESS
     );
 
     futures::future::pending().await
@@ -212,7 +215,7 @@ async fn sign(sig_args: CLITx) -> anyhow::Result<types::Signature> {
     Ok(signature)
 }
 
-fn verify_tx_signature(signed_tx: SignedTx) -> anyhow::Result<()> {
+fn verify_tx_signature(signed_tx: &SignedTx) -> anyhow::Result<()> {
     let hash = hash_tx(&signed_tx.tx).as_fixed_bytes().to_vec();
     let decoded = signed_tx.signature.parse::<types::Signature>()?;
     decoded.verify(hash, signed_tx.tx.from)?;
@@ -230,8 +233,13 @@ async fn send(send_args: CLITx) -> anyhow::Result<()> {
         }
     };
 
-    verify_tx_signature(signed)?;
-    // TODO send RPC msg to the L2 node with `signed`
+    verify_tx_signature(&signed)?;
+
+    let provider =
+        Provider::<Http>::try_from(SERVER_ADDRESS)?.interval(Duration::from_millis(10u64));
+    let client = Arc::new(provider);
+    let tx_receipt = client.request("submit_transaction", signed).await?;
+    println!("{:?}", tx_receipt);
 
     Ok(())
 }
@@ -270,19 +278,21 @@ async fn init_rpc(db: Db) -> anyhow::Result<ServerHandle> {
     let server = ServerBuilder::default()
         .set_host_filtering(AllowHosts::Any)
         .set_middleware(middleware)
-        .build(SERVER_ADDRESS.parse::<SocketAddr>()?)
+        .build(SOCKET_ADDRESS.parse::<SocketAddr>()?)
         .await?;
 
     println!("{}", server.local_addr().unwrap());
 
     let mut module = RpcModule::new(());
     module.register_method("submit_transaction", move |params, _| {
-        println!("received transaction!");
+        println!("received transaction! {:?}", params);
         let tx: SignedTx = params.parse()?;
-        // TODO verify signed transaction
+
+        verify_tx_signature(&tx)?;
+
         let mut db = db.lock().unwrap();
         db.push(tx);
-        Ok("Transaction received!")
+        Ok(())
     })?;
 
     let handle = server.start(module)?;
