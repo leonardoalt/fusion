@@ -1,42 +1,37 @@
+use ethers::core::utils::hex;
 use ethers::prelude::*;
+use k256::SecretKey;
+use log::info;
 use std::{convert::TryFrom, sync::Arc, time::Duration};
 
 #[derive(Debug, Clone)]
 pub struct Node {
-    pub http_client: Arc<Provider<Http>>,
+    pub http_client: Arc<SignerMiddleware<Provider<Http>, LocalWallet>>,
     pub http_endpoint: String,
 }
 
 impl Node {
-    /// Reads from env variables `ETH_RPC_URL` and `ETH_WS_URL`
-    /// - ETH_RPC_URL: json-rpc over http
-    /// - ETH_WS_URL: json-rpc over ws
-    pub async fn new_local_node_from_env() -> anyhow::Result<Self> {
-        let http_endpoint = std::env::var("ETH_RPC_URL")?;
+    pub async fn new_with_private_key(
+        priv_key: String,
+        http_endpoint: String,
+    ) -> anyhow::Result<Self> {
+        let priv_key = hex::decode(priv_key)?;
+        let provider = Provider::<Http>::try_from(http_endpoint.clone())?
+            .interval(Duration::from_millis(10u64));
+        let chain_id: u64 = provider.get_chainid().await?.as_u64();
 
-        // Polling duration of 10 second
-        let http_client = Provider::<Http>::try_from(http_endpoint.clone())?
-            .interval(Duration::from_millis(10000u64));
-
+        let wallet: LocalWallet = SecretKey::from_be_bytes(&priv_key)
+            .expect("did not get private key")
+            .into();
+        info!("Wallet with address: {:?}", wallet.address().clone());
+        let provider = provider.with_sender(wallet.address());
+        let wallet = wallet.with_chain_id(chain_id);
+        let http_client = SignerMiddleware::new(provider, wallet);
         let http_client = Arc::new(http_client);
 
         Ok(Node {
             http_client,
             http_endpoint,
         })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn sanity_check_endpoint() -> anyhow::Result<()> {
-        let node: Node = Node::new_local_node_from_env().await?;
-
-        // Anvil's chainid is 31337
-        assert_eq!(node.http_client.get_chainid().await?, U256::from(31337));
-        Ok(())
     }
 }

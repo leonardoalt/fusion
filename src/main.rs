@@ -24,6 +24,9 @@ use tokio::{task, time::interval};
 use tower_http::cors::{Any, CorsLayer};
 
 mod node;
+use node::Node;
+
+use l2_bindings::l2;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Tx {
@@ -60,6 +63,18 @@ impl From<CLITx> for SignedTx {
                 value: tx.value,
             },
             signature: tx.signature.unwrap(),
+        }
+    }
+}
+
+impl From<SignedTx> for l2::Tx {
+    fn from(tx: SignedTx) -> Self {
+        Self {
+            from: tx.tx.from,
+            to: tx.tx.to,
+            amt: tx.tx.value,
+            nonce: tx.tx.nonce,
+            signature: tx.signature.parse().unwrap(),
         }
     }
 }
@@ -141,16 +156,34 @@ async fn run_node() -> anyhow::Result<()> {
     let db_path = Path::new(DB_PATH);
     let db = init_db(db_path);
     let rpc = init_rpc(db.clone()).await.unwrap();
-    //let l1 = init_l1(db.clone());
+
+    let private_key = std::env::var("ETH_PRIVATE_KEY")?;
+    let http_endpoint = std::env::var("ETH_RPC_URL")?;
 
     task::spawn(async move {
+        let l1_contract = init_l1(private_key, http_endpoint).await.unwrap();
         let mut interval = interval(Duration::from_millis(1000 * 5));
 
         loop {
             interval.tick().await;
-            let mut db = db.lock().unwrap();
-            println!("submit transactions {:#?}", db);
-            db.drain(..);
+
+            let txs: Vec<l2::Tx> = {
+                let mut db = db.lock().unwrap();
+                println!("submit transactions {:#?}", db);
+                db.drain(..).map(|tx| tx.into()).collect()
+            };
+
+            let current_root = l1_contract.root().call().await.unwrap();
+            println!("Current root is {}", types::H256::from(current_root));
+
+            l1_contract
+                .submit_block(vec![], current_root)
+                .send()
+                .await
+                .unwrap();
+            // TODO \/ fails atm because we need to
+            // compute the new block
+            //l1_contract.submit_block(txs.into(), current_root).send().await.unwrap();
         }
     });
 
@@ -262,8 +295,16 @@ fn init_db(path: &Path) -> Db {
     Arc::new(Mutex::new(vec![]))
 }
 
-fn init_l1(db: Db) -> Provider<Http> {
-    Provider::<Http>::try_from("https://mainnet.infura.io/v3/YOUR_API_KEY").unwrap()
+async fn init_l1(
+    private_key: String,
+    http_endpoint: String,
+) -> anyhow::Result<l2::L2<ethers::middleware::SignerMiddleware<Provider<Http>, LocalWallet>>> {
+    let node = Arc::new(Node::new_with_private_key(private_key, http_endpoint).await?);
+
+    let l2_address: types::Address = std::env::var("TROLLUP_L1_CONTRACT")?.parse()?;
+    let l2_contract = l2::L2::new(l2_address, node.http_client.clone());
+
+    Ok(l2_contract)
 }
 
 async fn init_rpc(db: Db) -> anyhow::Result<ServerHandle> {
