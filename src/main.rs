@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     net::SocketAddr,
     path::Path,
     sync::{Arc, Mutex},
@@ -146,8 +147,7 @@ pub struct CLITx {
         long,
         short = 's',
         value_name = "SIGNATURE",
-        help = "The signed transaction.",
-        default_value = ""
+        help = "The signed transaction."
     )]
     pub signature: Option<String>,
 }
@@ -164,26 +164,43 @@ async fn run_node() -> anyhow::Result<()> {
         let l1_contract = init_l1(private_key, http_endpoint).await.unwrap();
         let mut interval = interval(Duration::from_millis(1000 * 5));
 
+        let addr0: types::Address = "0x318A2475f1ba1A1AC4562D1541512d3649eE1131"
+            .parse()
+            .unwrap();
+        let addr1: types::Address = "0x419978a8729ed2c3b1048b5Bba49f8599eD8F7C1"
+            .parse()
+            .unwrap();
+
         loop {
             interval.tick().await;
-
-            let txs: Vec<l2::Tx> = {
-                let mut db = db.lock().unwrap();
-                println!("submit transactions {:#?}", db);
-                db.drain(..).map(|tx| tx.into()).collect()
-            };
 
             let current_root = l1_contract.root().call().await.unwrap();
             println!("Current root is {}", types::H256::from(current_root));
 
+            let state = l1_contract.current_state().call().await.unwrap();
+            let state = HashMap::<types::Address, types::U256>::from([
+                (addr0, state[0]),
+                (addr1, state[1]),
+            ]);
+            println!("Current L1 state is {:?}", state);
+
+            let txs: Vec<_> = db
+                .lock()
+                .unwrap()
+                .drain(..)
+                .filter(|tx| validate_tx(&state, tx).is_ok())
+                .collect();
+
+            let state = txs.iter().fold(state, apply_tx);
+            println!("Computed L2 state is {:?}", state);
             l1_contract
-                .submit_block(vec![], current_root)
+                .submit_block(
+                    txs.into_iter().map(|tx| tx.into()).collect(),
+                    compute_root(&state).into(),
+                )
                 .send()
                 .await
                 .unwrap();
-            // TODO \/ fails atm because we need to
-            // compute the new block
-            //l1_contract.submit_block(txs.into(), current_root).send().await.unwrap();
         }
     });
 
@@ -217,6 +234,44 @@ async fn run_node() -> anyhow::Result<()> {
     );
 
     futures::future::pending().await
+}
+
+fn validate_tx(state: &HashMap<types::Address, types::U256>, tx: &SignedTx) -> anyhow::Result<()> {
+    match state.get(&tx.tx.from) {
+        Some(entry) if *entry >= tx.tx.value => Ok(()),
+        _ => Err(anyhow::anyhow!("Insufficient balance")),
+    }
+}
+
+fn apply_tx(
+    mut state: HashMap<types::Address, types::U256>,
+    tx: &SignedTx,
+) -> HashMap<types::Address, types::U256> {
+    match state.get_mut(&tx.tx.from) {
+        Some(entry) if *entry >= tx.tx.value => {
+            *entry -= tx.tx.value;
+        }
+        _ => panic!(),
+    };
+    *state.entry(tx.tx.to).or_insert_with(|| 0.into()) += tx.tx.value;
+    state
+}
+
+fn compute_root(state: &HashMap<types::Address, types::U256>) -> types::H256 {
+    let addr0: types::Address = "0x318A2475f1ba1A1AC4562D1541512d3649eE1131"
+        .parse()
+        .unwrap();
+    let addr1: types::Address = "0x419978a8729ed2c3b1048b5Bba49f8599eD8F7C1"
+        .parse()
+        .unwrap();
+
+    let mut addr0_bytes = vec![0; 32];
+    state[&addr0].to_big_endian(&mut addr0_bytes);
+
+    let mut addr1_bytes = vec![0; 32];
+    state[&addr1].to_big_endian(&mut addr1_bytes);
+
+    keccak256([addr0_bytes, addr1_bytes].concat()).into()
 }
 
 fn hash_tx(sig_args: &Tx) -> ethers::types::TxHash {
@@ -258,7 +313,7 @@ fn verify_tx_signature(signed_tx: &SignedTx) -> anyhow::Result<()> {
 
 async fn send(send_args: CLITx) -> anyhow::Result<()> {
     let signed: SignedTx = if send_args.signature.is_some() {
-        send_args.into()
+        send_args.clone().into()
     } else {
         SignedTx {
             tx: send_args.clone().into(),
