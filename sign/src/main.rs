@@ -1,7 +1,4 @@
-use std::{
-    sync::Arc,
-    time::Duration,
-};
+use std::{sync::Arc, time::Duration};
 
 use clap::{Parser, Subcommand};
 use ethers::{
@@ -23,7 +20,7 @@ async fn main() -> anyhow::Result<()> {
             println!("{}", signature);
             Ok(())
         }
-        Subcommands::Send(send_args) => send(send_args).await
+        Subcommands::Send(send_args) => send(send_args).await,
     }
 }
 
