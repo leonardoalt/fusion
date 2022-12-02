@@ -22,7 +22,7 @@ L2 transactions.
 
 ## State
 
-The state currently consists of two address,
+The state currently consists of two addresses,
 0x318A2475f1ba1A1AC4562D1541512d3649eE1131 (A1) and
 0x419978a8729ed2c3b1048b5Bba49f8599eD8F7C1 (A2). The state root is
 `keccak256(A1, A2)`.
@@ -30,3 +30,17 @@ The state currently consists of two address,
 ## Execution
 
 There is no VM on the L2 at the moment.
+
+## Roadmap
+
+These are roughly the steps we want to achieve.
+
+### Milestone 1 (done)
+
+The goal is to have a working dumb L2 that only knows two addresses.  This
+includes a node, ECDSA, state verification on an L1 contract.
+
+### Milestone 2
+
+The end goal is to have the L1 contract only store the state roots and
+receive a SNARK for verification.
