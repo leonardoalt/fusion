@@ -6,12 +6,10 @@ use std::{
     time::Duration,
 };
 
-use clap::{Parser, Subcommand};
 use ethers::{
     abi::Address,
-    core::k256::SecretKey,
     providers::{Http, Provider},
-    signers::{LocalWallet, Signer},
+    signers::LocalWallet,
     types,
     utils::keccak256,
 };
@@ -37,35 +35,10 @@ struct Tx {
     value: types::U256,
 }
 
-impl From<CLITx> for Tx {
-    fn from(tx: CLITx) -> Self {
-        Self {
-            from: tx.from,
-            to: tx.to,
-            nonce: tx.nonce,
-            value: tx.value,
-        }
-    }
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 struct SignedTx {
     tx: Tx,
     signature: String,
-}
-
-impl From<CLITx> for SignedTx {
-    fn from(tx: CLITx) -> Self {
-        Self {
-            tx: Tx {
-                from: tx.from,
-                to: tx.to,
-                nonce: tx.nonce,
-                value: tx.value,
-            },
-            signature: tx.signature.unwrap(),
-        }
-    }
 }
 
 impl From<SignedTx> for l2::Tx {
@@ -84,73 +57,6 @@ type Db = Arc<Mutex<Vec<SignedTx>>>;
 
 const DB_PATH: &str = "./db";
 const SOCKET_ADDRESS: &str = "127.0.0.1:38171";
-const SERVER_ADDRESS: &str = "http://localhost:38171";
-
-#[derive(Debug, Parser)]
-#[clap(name = "trollup sequencer", version = env!("CARGO_PKG_VERSION"))]
-struct Opts {
-    #[clap(subcommand)]
-    pub sub: Option<Subcommands>,
-}
-
-#[derive(Debug, Subcommand)]
-pub enum Subcommands {
-    #[clap(about = "Sign a trollup transaction.")]
-    Sign(CLITx),
-    #[clap(about = "Send trollup transaction, potentially sign it before.")]
-    Send(CLITx),
-}
-
-#[derive(Debug, Clone, Parser, Default)]
-pub struct CLITx {
-    #[clap(
-        long,
-        short = 'p',
-        value_name = "PRIVATE_KEY",
-        help = "The private key that signs the message",
-        default_value = "0x0000000000000000000000000000000000000000000000000000000000000000"
-    )]
-    pub private_key: ethers::types::H256,
-    #[clap(
-        long,
-        short = 'f',
-        value_name = "FROM_ADDRESS",
-        help = "The address of the from address.",
-        default_value = "0x0000000000000000000000000000000000000000"
-    )]
-    pub from: ethers::types::Address,
-    #[clap(
-        long,
-        short = 't',
-        value_name = "DEST_ADDRESS",
-        help = "The address of the destination address.",
-        default_value = "0x0000000000000000000000000000000000000000"
-    )]
-    pub to: ethers::types::Address,
-    #[clap(
-        long,
-        short = 'v',
-        value_name = "VALUE",
-        help = "The value of the transaction.",
-        default_value = "0"
-    )]
-    pub value: ethers::types::U256,
-    #[clap(
-        long,
-        short = 'n',
-        value_name = "NONCE",
-        help = "The nonce of the transaction.",
-        default_value = "0"
-    )]
-    pub nonce: ethers::types::U256,
-    #[clap(
-        long,
-        short = 's',
-        value_name = "SIGNATURE",
-        help = "The signed transaction."
-    )]
-    pub signature: Option<String>,
-}
 
 async fn run_node() -> anyhow::Result<()> {
     let db_path = Path::new(DB_PATH);
@@ -292,17 +198,6 @@ fn hash_tx(sig_args: &Tx) -> ethers::types::TxHash {
     types::TxHash::from(keccak256(msg))
 }
 
-async fn sign(sig_args: CLITx) -> anyhow::Result<types::Signature> {
-    let wallet: LocalWallet = SecretKey::from_be_bytes(sig_args.private_key.as_bytes())
-        .expect("invalid private key")
-        .into();
-
-    let hash = hash_tx(&sig_args.into()).as_fixed_bytes().to_vec();
-    let signature = wallet.sign_message(hash.clone()).await?;
-
-    Ok(signature)
-}
-
 fn verify_tx_signature(signed_tx: &SignedTx) -> anyhow::Result<()> {
     let hash = hash_tx(&signed_tx.tx).as_fixed_bytes().to_vec();
     let decoded = signed_tx.signature.parse::<types::Signature>()?;
@@ -311,39 +206,9 @@ fn verify_tx_signature(signed_tx: &SignedTx) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn send(send_args: CLITx) -> anyhow::Result<()> {
-    let signed: SignedTx = if send_args.signature.is_some() {
-        send_args.clone().into()
-    } else {
-        SignedTx {
-            tx: send_args.clone().into(),
-            signature: sign(send_args).await?.to_string(),
-        }
-    };
-
-    verify_tx_signature(&signed)?;
-
-    let provider =
-        Provider::<Http>::try_from(SERVER_ADDRESS)?.interval(Duration::from_millis(10u64));
-    let client = Arc::new(provider);
-    let tx_receipt = client.request("submit_transaction", signed).await?;
-    println!("{:?}", tx_receipt);
-
-    Ok(())
-}
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let opts = Opts::parse();
-    match opts.sub {
-        Some(Subcommands::Sign(sig_args)) => {
-            let signature = sign(sig_args).await?;
-            println!("{}", signature);
-            Ok(())
-        }
-        Some(Subcommands::Send(send_args)) => send(send_args).await,
-        _ => run_node().await,
-    }
+    run_node().await
 }
 
 fn init_db(path: &Path) -> Db {
