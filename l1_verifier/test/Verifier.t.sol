@@ -3,16 +3,16 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
 
-import "src/L2.sol";
+import "src/Verifier.sol";
 
-contract L2Test is Test {
-    L2 l2;
+contract VerifierTest is Test {
+    Verifier verifier;
 
     address constant addr0 = 0x318A2475f1ba1A1AC4562D1541512d3649eE1131;
     address constant addr1 = 0x419978a8729ed2c3b1048b5Bba49f8599eD8F7C1;
 
     function setUp() public {
-        l2 = new L2();
+        verifier = new Verifier();
     }
 
     ////////////////
@@ -20,42 +20,42 @@ contract L2Test is Test {
     ////////////////
 
     function testDeposit() public {
-        uint[2] memory preState = l2.currentState();
+        uint[2] memory preState = verifier.currentState();
         fundL2(addr0, 100);
-        uint[2] memory postState = l2.currentState();
+        uint[2] memory postState = verifier.currentState();
         assertEq(postState[0], preState[0] + 100);
     }
 
     function testWithdraw() public {
-        uint[2] memory preState = l2.currentState();
+        uint[2] memory preState = verifier.currentState();
         fundL2(addr0, 100);
         exitL2(addr0, 100);
-        uint[2] memory postState = l2.currentState();
+        uint[2] memory postState = verifier.currentState();
         assertEq(postState[0], preState[0]);
     }
 
     function testL2Tx() public {
         fundL2(addr0, 1_000_000);
 
-        uint[2] memory state0 = l2.currentState();
+        uint[2] memory state0 = verifier.currentState();
         uint[2] memory expectedState = [ state0[0] - 0x4242, state0[1] ];
 
         bytes32 expectedRoot = root(expectedState);
-        l2.submitBlock(oneTx(simpleTx()), expectedRoot);
+        verifier.submitBlock(oneTx(simpleTx()), expectedRoot);
     }
 
     //////////////////////
     // Helper functions //
     //////////////////////
 
-    function root(uint[2] memory state) internal returns (bytes32) {
+    function root(uint[2] memory state) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(state[0], state[1]));
     }
 
     function fundL2(address who, uint amt) internal {
         vm.startPrank(who);
         vm.deal(who, amt);
-        l2.deposit{value: amt}();
+        verifier.deposit{value: amt}();
         vm.stopPrank();
 
         submitEmptyBlock();
@@ -63,21 +63,21 @@ contract L2Test is Test {
 
     function exitL2(address who, uint amt) internal {
         vm.startPrank(who);
-        l2.withdraw(amt);
+        verifier.withdraw(amt);
         vm.stopPrank();
 
         submitEmptyBlock();
     }
 
-    function oneTx(Tx memory _tx) internal returns (Tx[] memory) {
-        Tx[] memory oneTx = new Tx[](1);
-        oneTx[0] = _tx;
-        return oneTx;
+    function oneTx(Tx memory _tx) internal pure returns (Tx[] memory) {
+        Tx[] memory oTx = new Tx[](1);
+        oTx[0] = _tx;
+        return oTx;
     }
 
     function submitEmptyBlock() internal {
         Tx[] memory txBlock;
-        l2.submitBlock(txBlock, l2.root());
+        verifier.submitBlock(txBlock, verifier.root());
     }
 
     function simpleTx() internal pure returns (Tx memory) {

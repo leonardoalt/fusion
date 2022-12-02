@@ -20,7 +20,7 @@ struct Transfer {
     uint256 amt;
 }
 
-contract L2 {
+contract Verifier {
     mapping(address => uint256) state;
     bytes32 public root;
 

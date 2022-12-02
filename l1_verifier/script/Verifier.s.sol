@@ -3,18 +3,18 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Script.sol";
 
-import "src/L2.sol";
+import "src/Verifier.sol";
 
-contract L2Script is Script {
+contract VerifierScript is Script {
     function setUp() public {}
 
-    function run() public returns (L2) {
+    function run() public returns (Verifier) {
         vm.startBroadcast();
 
-        L2 l2 = new L2();
+        Verifier verifier = new Verifier();
 
         vm.stopBroadcast();
 
-        return l2;
+        return verifier;
     }
 }
