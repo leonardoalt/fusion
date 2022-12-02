@@ -14,6 +14,17 @@ This repository contains the entire Trollup tool suite:
 - `sign`: a simple CLI interface to sign Trollup transactions and/or send them
   to a node.
 
+## Run it
+
+Requirements: [foundry](https://github.com/foundry-rs/foundry).
+
+1. Start an `anvil` node, and set the env variable `ETH_RPC_URL` to where `anvil` is listening - usually `http://localhost:8545`.
+2. Set `ETH_PRIVATE_KEY` to the private key that will deploy the L1 contract. In `l1-verifier`, run `forge script script/Verifier.s.sol --rpc-url $ETH_RPC_URL --private-key $ETH_PRIVATE_KEY --broadcast`.
+3. Take the deployed contract address (likely 0x5fbdb2315678afecb367f032d93f642f64180aa3 with `anvil`'s default configuration) and set in `TROLLUP_L1_CONTRACT`.
+4. In `sequencer`, run `cargo run`.
+5. In `sign`, you can use `cargo run -- send` to sign and send transactions to the Trollup node. Run `cargo run -- send -h` to see the parameters.
+6. You can also send Ethereum L1 transactions to the Trollup contract to enter/exit the L2.
+
 ## What
 
 Currently, Trollup is basically a dumb payment channel. Users can enter and
