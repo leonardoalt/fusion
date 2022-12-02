@@ -13,7 +13,7 @@ ethers = { git = "https://github.com/gakonst/ethers-rs" }
 futures = "0.3.25"
 hyper = "0.14.23"
 jsonrpsee = { version = "0.16.0", features = ["server"] }
-l2_bindings = { path = "./l2_bindings" }
+l1-verifier-bindings = { path = "./l1-verifier-bindings" }
 log = "0.4.17"
 serde = "1.0.147"
 tokio = "1.21.2"

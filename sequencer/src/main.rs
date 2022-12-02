@@ -26,14 +26,14 @@ use api::*;
 mod node;
 use node::Node;
 
-use l2_bindings::l2;
+use l1_verifier_bindings::verifier;
 
 type Db = Arc<Mutex<Vec<SignedTx>>>;
 
 const DB_PATH: &str = "./db";
 const SOCKET_ADDRESS: &str = "127.0.0.1:38171";
 
-impl From<SignedTx> for l2::Tx {
+impl From<SignedTx> for verifier::Tx {
     fn from(tx: SignedTx) -> Self {
         Self {
             from: tx.tx.from,
@@ -205,13 +205,13 @@ fn init_db(path: &Path) -> Db {
 async fn init_l1(
     private_key: String,
     http_endpoint: String,
-) -> anyhow::Result<l2::L2<ethers::middleware::SignerMiddleware<Provider<Http>, LocalWallet>>> {
+) -> anyhow::Result<verifier::Verifier<ethers::middleware::SignerMiddleware<Provider<Http>, LocalWallet>>> {
     let node = Arc::new(Node::new_with_private_key(private_key, http_endpoint).await?);
 
-    let l2_address: types::Address = std::env::var("TROLLUP_L1_CONTRACT")?.parse()?;
-    let l2_contract = l2::L2::new(l2_address, node.http_client.clone());
+    let l1_address: types::Address = std::env::var("TROLLUP_L1_CONTRACT")?.parse()?;
+    let l1_contract = verifier::Verifier::new(l1_address, node.http_client.clone());
 
-    Ok(l2_contract)
+    Ok(l1_contract)
 }
 
 async fn init_rpc(db: Db) -> anyhow::Result<ServerHandle> {
