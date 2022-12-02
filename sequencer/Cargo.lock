@@ -2146,6 +2146,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "930c0acf610d3fdb5e2ab6213019aaa04e227ebe9547b0649ba599b16d788bd7"
 
 [[package]]
+name = "sequencer"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "ethers",
+ "futures",
+ "hyper",
+ "jsonrpsee",
+ "l2_bindings",
+ "log",
+ "serde",
+ "tokio",
+ "tower",
+ "tower-http",
+]
+
+[[package]]
 name = "serde"
 version = "1.0.147"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2578,24 +2596,6 @@ checksum = "97d095ae15e245a057c8e8451bab9b3ee1e1f68e9ba2b4fbc18d0ac5237835f2"
 dependencies = [
  "pin-project",
  "tracing",
-]
-
-[[package]]
-name = "trollup_sequencer"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "ethers",
- "futures",
- "hyper",
- "jsonrpsee",
- "l2_bindings",
- "log",
- "serde",
- "tokio",
- "tower",
- "tower-http",
 ]
 
 [[package]]

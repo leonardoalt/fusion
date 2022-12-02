@@ -2,14 +2,13 @@ use std::{sync::Arc, time::Duration};
 
 use clap::{Parser, Subcommand};
 use ethers::{
-    abi::Address,
     core::k256::SecretKey,
     providers::{Http, Provider},
     signers::{LocalWallet, Signer},
     types,
     utils::keccak256,
 };
-use serde::{Deserialize, Serialize};
+use sequencer::api::*;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -50,18 +49,10 @@ async fn send(send_args: CLITx) -> anyhow::Result<()> {
     let provider =
         Provider::<Http>::try_from(SERVER_ADDRESS)?.interval(Duration::from_millis(10u64));
     let client = Arc::new(provider);
-    let tx_receipt = client.request("submit_transaction", signed).await?;
+    let tx_receipt = client.request(RPC_SUBMIT_TX, signed).await?;
     println!("{:?}", tx_receipt);
 
     Ok(())
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Tx {
-    from: Address,
-    to: Address,
-    nonce: types::U256,
-    value: types::U256,
 }
 
 impl From<CLITx> for Tx {
@@ -73,12 +64,6 @@ impl From<CLITx> for Tx {
             value: tx.value,
         }
     }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct SignedTx {
-    tx: Tx,
-    signature: String,
 }
 
 impl From<CLITx> for SignedTx {

@@ -1,5 +1,5 @@
 [package]
-name = "trollup_sequencer"
+name = "sequencer"
 version = "0.1.0"
 edition = "2021"
 

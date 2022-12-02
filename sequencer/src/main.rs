@@ -7,7 +7,6 @@ use std::{
 };
 
 use ethers::{
-    abi::Address,
     providers::{Http, Provider},
     signers::LocalWallet,
     types,
@@ -18,28 +17,21 @@ use jsonrpsee::{
     server::{AllowHosts, ServerBuilder, ServerHandle},
     RpcModule,
 };
-use serde::{Deserialize, Serialize};
 use tokio::{task, time::interval};
 use tower_http::cors::{Any, CorsLayer};
+
+mod api;
+use api::*;
 
 mod node;
 use node::Node;
 
 use l2_bindings::l2;
 
-#[derive(Debug, Serialize, Deserialize)]
-struct Tx {
-    from: Address,
-    to: Address,
-    nonce: types::U256,
-    value: types::U256,
-}
+type Db = Arc<Mutex<Vec<SignedTx>>>;
 
-#[derive(Debug, Serialize, Deserialize)]
-struct SignedTx {
-    tx: Tx,
-    signature: String,
-}
+const DB_PATH: &str = "./db";
+const SOCKET_ADDRESS: &str = "127.0.0.1:38171";
 
 impl From<SignedTx> for l2::Tx {
     fn from(tx: SignedTx) -> Self {
@@ -52,11 +44,6 @@ impl From<SignedTx> for l2::Tx {
         }
     }
 }
-
-type Db = Arc<Mutex<Vec<SignedTx>>>;
-
-const DB_PATH: &str = "./db";
-const SOCKET_ADDRESS: &str = "127.0.0.1:38171";
 
 async fn run_node() -> anyhow::Result<()> {
     let db_path = Path::new(DB_PATH);
@@ -245,7 +232,7 @@ async fn init_rpc(db: Db) -> anyhow::Result<ServerHandle> {
     println!("{}", server.local_addr().unwrap());
 
     let mut module = RpcModule::new(());
-    module.register_method("submit_transaction", move |params, _| {
+    module.register_method(RPC_SUBMIT_TX, move |params, _| {
         println!("received transaction! {:?}", params);
         let tx: SignedTx = params.parse()?;
 
