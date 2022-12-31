@@ -1,15 +1,15 @@
 use ethers::types::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Tx {
-    pub from: Address,
+    pub sender: Address,
     pub to: Address,
     pub nonce: U256,
     pub value: U256,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SignedTx {
     pub tx: Tx,
     pub signature: String,

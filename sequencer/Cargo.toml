@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.66"
+bitmaps = "3.2.0"
 clap = { version = "4.0.22", features = ["derive"] }
 #ethers = "1.0.0"
 ethers = { git = "https://github.com/gakonst/ethers-rs" }
@@ -15,7 +16,16 @@ hyper = "0.14.23"
 jsonrpsee = { version = "0.16.0", features = ["server"] }
 l1-verifier-bindings = { path = "./l1-verifier-bindings" }
 log = "0.4.17"
-serde = "1.0.147"
+poseidon = { git = "https://github.com/JordanCason/Poseidon_BN128", branch = "master" }
+zokrates_abi = { git = "https://github.com/ZoKrates/ZoKrates", branch = "develop" }
+zokrates_analysis = { git = "https://github.com/ZoKrates/ZoKrates", branch = "develop" }
+zokrates_ast = { git = "https://github.com/ZoKrates/ZoKrates", branch = "develop" }
+zokrates_common = { git = "https://github.com/ZoKrates/ZoKrates", branch = "develop" }
+zokrates_field = { git = "https://github.com/ZoKrates/ZoKrates", branch = "develop" }
+zokrates_interpreter = { git = "https://github.com/ZoKrates/ZoKrates", branch = "develop" }
+serde = "1.0.152"
+serde_json = "1.0.61"
+serde_tuple = "0.5.0"
 tokio = "1.21.2"
 tower = "0.4.13"
 tower-http = { version = "0.3.4", features = ["cors"] }

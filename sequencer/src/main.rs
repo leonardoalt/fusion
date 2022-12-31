@@ -1,5 +1,4 @@
 use std::{
-    collections::HashMap,
     net::SocketAddr,
     path::Path,
     sync::{Arc, Mutex},
@@ -20,23 +19,25 @@ use jsonrpsee::{
 use tokio::{task, time::interval};
 use tower_http::cors::{Any, CorsLayer};
 
-mod api;
-use api::*;
-
-mod node;
-use node::Node;
+use sequencer::node::Node;
 
 use l1_verifier_bindings::verifier;
+
+use sequencer::api::*;
+use sequencer::conversions::*;
+use sequencer::prover::*;
+use sequencer::state::{Account, State};
 
 type Db = Arc<Mutex<Vec<SignedTx>>>;
 
 const DB_PATH: &str = "./db";
 const SOCKET_ADDRESS: &str = "127.0.0.1:38171";
 
+/*
 impl From<SignedTx> for verifier::Tx {
     fn from(tx: SignedTx) -> Self {
         Self {
-            from: tx.tx.from,
+            sender: tx.tx.sender,
             to: tx.tx.to,
             amt: tx.tx.value,
             nonce: tx.tx.nonce,
@@ -44,38 +45,27 @@ impl From<SignedTx> for verifier::Tx {
         }
     }
 }
+*/
 
 async fn run_node() -> anyhow::Result<()> {
     let db_path = Path::new(DB_PATH);
     let db = init_db(db_path);
     let rpc = init_rpc(db.clone()).await.unwrap();
 
-    let private_key = std::env::var("ETH_PRIVATE_KEY")?;
-    let http_endpoint = std::env::var("ETH_RPC_URL")?;
+    let _private_key = std::env::var("ETH_PRIVATE_KEY")?;
+    let _http_endpoint = std::env::var("ETH_RPC_URL")?;
 
     task::spawn(async move {
-        let l1_contract = init_l1(private_key, http_endpoint).await.unwrap();
-        let mut interval = interval(Duration::from_millis(1000 * 5));
+        let mut state = State::default();
 
-        let addr0: types::Address = "0x318A2475f1ba1A1AC4562D1541512d3649eE1131"
-            .parse()
-            .unwrap();
-        let addr1: types::Address = "0x419978a8729ed2c3b1048b5Bba49f8599eD8F7C1"
-            .parse()
-            .unwrap();
+        //let l1_contract = init_l1(private_key, http_endpoint).await.unwrap();
+        let mut interval = interval(Duration::from_millis(1000 * 5));
 
         loop {
             interval.tick().await;
 
-            let current_root = l1_contract.root().call().await.unwrap();
-            println!("Current root is {}", types::H256::from(current_root));
-
-            let state = l1_contract.current_state().call().await.unwrap();
-            let state = HashMap::<types::Address, types::U256>::from([
-                (addr0, state[0]),
-                (addr1, state[1]),
-            ]);
-            println!("Current L1 state is {:?}", state);
+            //let current_root = l1_contract.root().call().await.unwrap();
+            //println!("Current root is {}", types::H256::from(current_root));
 
             let txs: Vec<_> = db
                 .lock()
@@ -84,16 +74,26 @@ async fn run_node() -> anyhow::Result<()> {
                 .filter(|tx| validate_tx(&state, tx).is_ok())
                 .collect();
 
-            let state = txs.iter().fold(state, apply_tx);
-            println!("Computed L2 state is {:?}", state);
+            let pre_state = state.clone();
+            state = txs.iter().fold(state, apply_tx);
+            println!("Computed L2 state root is {:?}", state.root());
+
+            if !txs.is_empty() {
+                if let Err(e) = Prover::prove(&txs[0].tx, &pre_state, &state) {
+                    println!("Could not generate proof: {e}");
+                };
+            }
+
+            /*
             l1_contract
                 .submit_block(
                     txs.into_iter().map(|tx| tx.into()).collect(),
-                    compute_root(&state).into(),
+                    state.root(),
                 )
                 .send()
                 .await
                 .unwrap();
+            */
         }
     });
 
@@ -102,7 +102,7 @@ async fn run_node() -> anyhow::Result<()> {
     println!("Run the following snippet in the developer console in any Website.");
     println!(
         r#"
-        fetch("http://{}", {{
+        fetch("http://{SOCKET_ADDRESS}", {{
             method: 'POST',
             mode: 'cors',
             headers: {{ 'Content-Type': 'application/json' }},
@@ -110,8 +110,9 @@ async fn run_node() -> anyhow::Result<()> {
                 jsonrpc: '2.0',
                 method: 'submit_transaction',
                 params: {{
-                    from: '0x0000000000000000000000000000000000000000',
+                    sender: '0x0000000000000000000000000000000000000000',
                     to: '0x0000000000000000000000000000000000000000',
+                    nonce: 3,
                     amount: 42
                 }},
                 id: 1
@@ -122,49 +123,37 @@ async fn run_node() -> anyhow::Result<()> {
         }}).then(body => {{
             console.log("Response Body:", body)
         }});
-    "#,
-        SOCKET_ADDRESS
+    "#
     );
 
     futures::future::pending().await
 }
 
-fn validate_tx(state: &HashMap<types::Address, types::U256>, tx: &SignedTx) -> anyhow::Result<()> {
-    match state.get(&tx.tx.from) {
-        Some(entry) if *entry >= tx.tx.value => Ok(()),
-        _ => Err(anyhow::anyhow!("Insufficient balance")),
+fn validate_tx(state: &State, tx: &SignedTx) -> anyhow::Result<()> {
+    let account = state.get(&tx.tx.sender.to_h256());
+    if account.balance < tx.tx.value {
+        Err(anyhow::anyhow!("Insufficient balance"))
+    } else if account.nonce >= tx.tx.nonce {
+        Err(anyhow::anyhow!("Nonce too low"))
+    } else {
+        Ok(())
     }
 }
 
-fn apply_tx(
-    mut state: HashMap<types::Address, types::U256>,
-    tx: &SignedTx,
-) -> HashMap<types::Address, types::U256> {
-    match state.get_mut(&tx.tx.from) {
-        Some(entry) if *entry >= tx.tx.value => {
-            *entry -= tx.tx.value;
-        }
-        _ => panic!(),
-    };
-    *state.entry(tx.tx.to).or_insert_with(|| 0.into()) += tx.tx.value;
+fn apply_tx(mut state: State, tx: &SignedTx) -> State {
+    let key_sender = tx.tx.sender.to_h256();
+    let key_to = tx.tx.to.to_h256();
+
+    let account_sender = state.get(&key_sender);
+    let account_to = state.get(&key_to);
+
+    let new_account_sender = Account::new(tx.tx.sender, account_sender.balance - tx.tx.value, tx.tx.nonce);
+    let new_account_to = Account::new(tx.tx.sender, account_to.balance + tx.tx.value, account_to.nonce);
+
+    state.update(&key_sender, new_account_sender);
+    state.update(&key_to, new_account_to);
+
     state
-}
-
-fn compute_root(state: &HashMap<types::Address, types::U256>) -> types::H256 {
-    let addr0: types::Address = "0x318A2475f1ba1A1AC4562D1541512d3649eE1131"
-        .parse()
-        .unwrap();
-    let addr1: types::Address = "0x419978a8729ed2c3b1048b5Bba49f8599eD8F7C1"
-        .parse()
-        .unwrap();
-
-    let mut addr0_bytes = vec![0; 32];
-    state[&addr0].to_big_endian(&mut addr0_bytes);
-
-    let mut addr1_bytes = vec![0; 32];
-    state[&addr1].to_big_endian(&mut addr1_bytes);
-
-    keccak256([addr0_bytes, addr1_bytes].concat()).into()
 }
 
 fn hash_tx(sig_args: &Tx) -> ethers::types::TxHash {
@@ -175,7 +164,7 @@ fn hash_tx(sig_args: &Tx) -> ethers::types::TxHash {
     sig_args.nonce.to_big_endian(&mut nonce_bytes);
 
     let msg = [
-        sig_args.from.as_fixed_bytes().to_vec(),
+        sig_args.sender.as_fixed_bytes().to_vec(),
         sig_args.to.as_fixed_bytes().to_vec(),
         value_bytes,
         nonce_bytes,
@@ -188,7 +177,7 @@ fn hash_tx(sig_args: &Tx) -> ethers::types::TxHash {
 fn verify_tx_signature(signed_tx: &SignedTx) -> anyhow::Result<()> {
     let hash = hash_tx(&signed_tx.tx).as_fixed_bytes().to_vec();
     let decoded = signed_tx.signature.parse::<types::Signature>()?;
-    decoded.verify(hash, signed_tx.tx.from)?;
+    decoded.verify(hash, signed_tx.tx.sender)?;
 
     Ok(())
 }
@@ -198,14 +187,17 @@ async fn main() -> anyhow::Result<()> {
     run_node().await
 }
 
-fn init_db(path: &Path) -> Db {
+fn init_db(_path: &Path) -> Db {
     Arc::new(Mutex::new(vec![]))
 }
 
+/*
 async fn init_l1(
     private_key: String,
     http_endpoint: String,
-) -> anyhow::Result<verifier::Verifier<ethers::middleware::SignerMiddleware<Provider<Http>, LocalWallet>>> {
+) -> anyhow::Result<
+    verifier::Verifier<ethers::middleware::SignerMiddleware<Provider<Http>, LocalWallet>>,
+> {
     let node = Arc::new(Node::new_with_private_key(private_key, http_endpoint).await?);
 
     let l1_address: types::Address = std::env::var("TROLLUP_L1_CONTRACT")?.parse()?;
@@ -213,6 +205,7 @@ async fn init_l1(
 
     Ok(l1_contract)
 }
+*/
 
 async fn init_rpc(db: Db) -> anyhow::Result<ServerHandle> {
     let cors = CorsLayer::new()
@@ -233,10 +226,12 @@ async fn init_rpc(db: Db) -> anyhow::Result<ServerHandle> {
 
     let mut module = RpcModule::new(());
     module.register_method(RPC_SUBMIT_TX, move |params, _| {
-        println!("received transaction! {:?}", params);
+        println!("received transaction! {params:?}");
         let tx: SignedTx = params.parse()?;
 
-        verify_tx_signature(&tx)?;
+        if let Err(e) = verify_tx_signature(&tx) {
+            println!("Received tx with invalid signature {tx:?}. Error: {e}");
+        };
 
         let mut db = db.lock().unwrap();
         db.push(tx);
