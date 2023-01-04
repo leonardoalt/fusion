@@ -1,0 +1,5 @@
+*.json
+out
+out.r1cs
+out.wtns
+witness

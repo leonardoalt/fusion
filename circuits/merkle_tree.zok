@@ -1,0 +1,77 @@
+import "hashes/poseidon/poseidon" as hash;
+
+const u32 DEPTH = 256;
+
+struct Tx {
+	field sender;
+	field to;
+	field nonce;
+	field value;
+}
+
+struct Account {
+	field addr;
+	field balance;
+	field nonce;
+}
+
+def select(bool condition, field left, field right) -> (field, field) {
+	return (condition ? right : left, condition ? left : right);
+}
+
+def merge(field v0, field v1) -> field {
+	return if v0 == 0 && v1 == 0 {
+		0
+	} else { if v0 == 0 {
+		v1
+	} else { if v1 == 0 {
+		v0
+	} else {
+		hash::<2>([v0, v1])
+	}}};
+}
+
+def hash_leaf(Account acc) -> field {
+	return if acc.balance == 0 && acc.nonce == 0 {
+		0
+	} else {
+		hash::<3>([acc.addr, acc.balance, acc.nonce])
+	};
+}
+
+// Merke-Tree inclusion proof for tree depth 256 using Poseidon.
+// directionSelector => true if current digest is on the rhs of the hash
+def verify_merkle_tree(field root, field leaf, bool[DEPTH] directionSelector, field[DEPTH] path) -> bool {
+	// Start from the leaf
+	field mut digest = leaf;
+
+	// Loop up the tree
+	for u32 i in 0..DEPTH {
+		(field, field) s = select(directionSelector[i], digest, path[i]);
+		digest = merge(s.0, s.1);
+	}
+
+	return digest == root;
+}
+
+def main(field preRoot, Tx tx, Account preAccount, private field postRoot, private bool[DEPTH] directionSelector, private field[DEPTH] prePath, private field[DEPTH] postPath) -> bool {
+	// Verify current state
+	assert(verify_merkle_tree(preRoot, hash_leaf(preAccount), directionSelector, prePath));
+
+	/* Apply tx changes */
+	assert(tx.sender == preAccount.addr);
+	assert(preAccount.balance >= tx.value);
+	assert(preAccount.nonce < tx.nonce);
+
+	Account postAccount = Account {
+		addr: preAccount.addr,
+		balance: preAccount.balance - tx.value,
+		nonce: tx.nonce
+	};
+	/******************/
+
+	// Verify new state
+	assert(verify_merkle_tree(postRoot, hash_leaf(postAccount), directionSelector, postPath));
+
+	return true;
+}
