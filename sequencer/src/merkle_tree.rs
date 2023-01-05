@@ -54,6 +54,11 @@ impl BranchKey {
         }
     }
 
+    /// Iterator that returns the sequence of BranchKeys to the root.
+    fn path_to_root(&self) -> BranchKeyIterator {
+        BranchKeyIterator(Some(self.clone()))
+    }
+
     fn sibling(&self) -> Self {
         let mut p_map = self.bitmap;
         p_map.set(self.height as usize, !p_map.get(self.height as usize));
@@ -80,6 +85,18 @@ impl BranchKey {
     }
 }
 
+struct BranchKeyIterator(Option<BranchKey>);
+
+impl Iterator for BranchKeyIterator {
+    type Item = BranchKey;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let result = self.0.clone();
+        self.0 = self.0.clone().and_then(|k| k.parent());
+        result
+    }
+}
+
 #[derive(Clone)]
 struct BranchNode(U256);
 
@@ -95,15 +112,10 @@ impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
     }
 
     pub fn proof(&self, key: &U256) -> Vec<U256> {
-        let mut siblings = vec![];
-
-        let mut maybe_key = Some(BranchKey::for_leaf(key));
-        while let Some(key) = maybe_key {
-            siblings.push(self.branch_hash(&key.sibling()));
-            maybe_key = key.parent();
-        }
-
-        siblings
+        BranchKey::for_leaf(key)
+            .path_to_root()
+            .map(|item| self.branch_hash(&item.sibling()))
+            .collect()
     }
 
     pub fn update(&mut self, key: &U256, value: T) {
@@ -114,7 +126,7 @@ impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
         self.branches
             .insert(branch_key.clone(), BranchNode(Self::leaf_hash(key, &value)));
 
-        self.update_parents(branch_key);
+        self.update_parents(&branch_key);
     }
 
     pub fn delete(&mut self, key: &U256) {
@@ -122,7 +134,7 @@ impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
 
         let branch_key = BranchKey::for_leaf(key);
         self.branches.remove(&branch_key);
-        self.update_parents(branch_key);
+        self.update_parents(&branch_key);
     }
 
     pub fn verify_proof(root_hash: &U256, key: &U256, value: &T, proof: &[U256]) -> bool {
@@ -130,25 +142,21 @@ impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
             return false;
         }
         let mut hash = Self::leaf_hash(key, value);
-        let mut key = Some(BranchKey::for_leaf(key));
-        for item in proof {
-            hash = if key.clone().unwrap().is_left_child() {
-                Self::merge_hashes(&hash, item)
+        for (proof_item, path_item) in proof.iter().zip(BranchKey::for_leaf(key).path_to_root()) {
+            hash = if path_item.is_left_child() {
+                Self::merge_hashes(&hash, proof_item)
             } else {
-                Self::merge_hashes(item, &hash)
+                Self::merge_hashes(proof_item, &hash)
             };
-            key = key.unwrap().parent();
         }
         hash == *root_hash
     }
 
-    fn update_parents(&mut self, mut branch_key: BranchKey) {
-        // TODO make this safer
-        while let Some(parent) = branch_key.parent() {
+    fn update_parents(&mut self, branch_key: &BranchKey) {
+        for parent in branch_key.path_to_root().skip(1) {
             let left = parent.left_child().unwrap();
             let right = parent.right_child().unwrap();
             self.set_branch(&parent, BranchNode(self.merge_nodes(&left, &right)));
-            branch_key = parent;
         }
     }
 
@@ -254,6 +262,11 @@ mod test {
         fn zero() -> Self {
             Default::default()
         }
+    }
+
+    #[test]
+    fn iterator_length() {
+        assert_eq!(BranchKey::for_leaf(&0.into()).path_to_root().count(), 256);
     }
 
     #[test]
