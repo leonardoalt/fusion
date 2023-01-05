@@ -5,7 +5,7 @@ use crate::state::{Account, State};
 
 use bitmaps::Bitmap;
 
-use ethers::types::H256;
+use ethers::types::U256;
 
 use serde_json::from_reader;
 use serde_tuple::*;
@@ -21,26 +21,24 @@ use std::path::Path;
 
 #[derive(Serialize_tuple, Deserialize_tuple, Debug)]
 pub struct CircuitInput {
-    pre_root: H256,
+    pre_root: U256,
     tx: api::Tx,
     pre_account: Account,
-    post_root: H256,
+    post_root: U256,
     direction_selector: Vec<bool>,
-    pre_path: Vec<H256>,
-    post_path: Vec<H256>,
+    pre_path: Vec<U256>,
+    post_path: Vec<U256>,
 }
 
 impl CircuitInput {
     pub fn new(tx: &api::Tx, pre_state: &State, post_state: &State) -> Self {
-        let addr = tx.sender.to_h256();
-        let mut dir = addr.to_bitmap().to_vec_bool();
-        dir.reverse();
+        let addr: U256 = tx.sender.to_u256();
         Self {
             pre_root: pre_state.root(),
             tx: tx.clone(),
             pre_account: pre_state.get(&addr),
             post_root: post_state.root(),
-            direction_selector: dir,
+            direction_selector: addr.to_bitmap().to_vec_bool(),
             pre_path: pre_state.proof(&addr),
             post_path: post_state.proof(&addr),
         }
@@ -57,6 +55,7 @@ impl ToVecBool for Bitmap<256> {
         (0..256).for_each(|b| {
             v.push(self.get(b));
         });
+        v.reverse();
         v
     }
 }

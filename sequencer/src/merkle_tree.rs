@@ -18,7 +18,7 @@ use std::collections::BTreeMap;
 /// The leaves have height 255.
 #[derive(Default, Clone)]
 pub struct MerkleTree<H, T> {
-    keys: BTreeMap<H256, T>,
+    keys: BTreeMap<U256, T>,
     branches: BTreeMap<BranchKey, BranchNode>,
     phantom: PhantomData<H>,
 }
@@ -68,23 +68,23 @@ impl BranchKey {
 }
 
 #[derive(Clone)]
-struct BranchNode(H256);
+struct BranchNode(U256);
 
 impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
-    pub fn root(&self) -> H256 {
+    pub fn root(&self) -> U256 {
         let left = BranchKey::new(0, Bitmap::<256>::default());
         let right = left.sibling();
         self.merge_nodes(&left, &right)
     }
 
-    pub fn get(&self, key: &H256) -> T {
+    pub fn get(&self, key: &U256) -> Option<T> {
         match self.keys.get(key) {
-            Some(value) => value.clone(),
-            None => T::default(),
+            Some(value) => Some(value.clone()),
+            None => None
         }
     }
 
-    pub fn proof(&self, key: &H256) -> Vec<H256> {
+    pub fn proof(&self, key: &U256) -> Vec<U256> {
         let mut siblings = vec![];
 
         let mut leaf_key = Some(BranchKey::new(255, key.to_bitmap()));
@@ -98,13 +98,13 @@ impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
         siblings
     }
 
-    pub fn update(&mut self, key: &H256, value: T) {
+    pub fn update(&mut self, key: &U256, value: T) {
         // TODO remove entry from `self.keys` if `T == 0`.
         self.keys.insert(*key, value.clone());
 
         let branch_key = BranchKey::new(255, key.to_bitmap());
         self.branches
-            .insert(branch_key.clone(), BranchNode(value.to_h256()));
+            .insert(branch_key.clone(), BranchNode(value.to_u256()));
 
         let mut last_key = branch_key;
         // TODO make this safer
@@ -120,12 +120,12 @@ impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
         }
     }
 
-    fn merge_nodes(&self, key1: &BranchKey, key2: &BranchKey) -> H256 {
+    fn merge_nodes(&self, key1: &BranchKey, key2: &BranchKey) -> U256 {
         let v1 = self.branch_root(key1);
         let v2 = self.branch_root(key2);
 
         if v1.is_zero() && v2.is_zero() {
-            H256::zero()
+            0.into()
         } else if v1.is_zero() {
             v2
         } else if v2.is_zero() {
@@ -138,10 +138,10 @@ impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
         }
     }
 
-    fn branch_root(&self, key: &BranchKey) -> H256 {
+    fn branch_root(&self, key: &BranchKey) -> U256 {
         match self.branches.get(key) {
             Some(value) => value.0,
-            _ => H256::zero(),
+            _ => 0.into()
         }
     }
 }
@@ -162,12 +162,23 @@ impl ToBitmap for H256 {
     }
 }
 
+impl ToBitmap for U256 {
+    // TODO this function needs to ensure that
+    // the returned bitmap is the binary representation
+    // of the given number.
+    fn to_bitmap(&self) -> Bitmap<256> {
+        let x1 = self.low_u128();
+        let x2 = (self >> 128).low_u128();
+        Bitmap::<256>::from([x1, x2])
+    }
+}
+
 pub trait Value {
-    fn to_h256(&self) -> H256;
+    fn to_u256(&self) -> U256;
     fn zero() -> Self;
 }
 
 pub trait Hasher {
-    fn write_h256(&mut self, h: &H256);
-    fn finish(self) -> H256;
+    fn write_h256(&mut self, w: &U256);
+    fn finish(self) -> U256;
 }

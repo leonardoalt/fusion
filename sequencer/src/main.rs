@@ -130,7 +130,7 @@ async fn run_node() -> anyhow::Result<()> {
 }
 
 fn validate_tx(state: &State, tx: &SignedTx) -> anyhow::Result<()> {
-    let account = state.get(&tx.tx.sender.to_h256());
+    let account = state.get(&tx.tx.sender.to_u256());
     if account.balance < tx.tx.value {
         Err(anyhow::anyhow!("Insufficient balance"))
     } else if account.nonce >= tx.tx.nonce {
@@ -141,14 +141,14 @@ fn validate_tx(state: &State, tx: &SignedTx) -> anyhow::Result<()> {
 }
 
 fn apply_tx(mut state: State, tx: &SignedTx) -> State {
-    let key_sender = tx.tx.sender.to_h256();
-    let key_to = tx.tx.to.to_h256();
+    let key_sender = tx.tx.sender.to_u256();
+    let key_to = tx.tx.to.to_u256();
 
     let account_sender = state.get(&key_sender);
     let account_to = state.get(&key_to);
 
-    let new_account_sender = Account::new(tx.tx.sender, account_sender.balance - tx.tx.value, tx.tx.nonce);
-    let new_account_to = Account::new(tx.tx.sender, account_to.balance + tx.tx.value, account_to.nonce);
+    let new_account_sender = Account::new(key_sender, account_sender.balance - tx.tx.value, tx.tx.nonce);
+    let new_account_to = Account::new(key_to, account_to.balance + tx.tx.value, account_to.nonce);
 
     state.update(&key_sender, new_account_sender);
     state.update(&key_to, new_account_to);

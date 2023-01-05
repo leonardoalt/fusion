@@ -1,35 +1,59 @@
 use crate::merkle_tree::{Hasher, MerkleTree, Value};
 
-use ethers::types::{Address, H256, U256};
+use ethers::types::{H256, U256};
 use serde::{Serialize, Deserialize};
 use poseidon::*;
 use zokrates_field::Bn128Field;
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct Account {
-    pub addr: Address,
+    pub id: U256,
     pub balance: U256,
     pub nonce: U256,
 }
 
 impl Account {
-    pub fn new(addr: Address, balance: U256, nonce: U256) -> Self {
-        Account { addr, balance, nonce }
+    pub fn new(id: U256, balance: U256, nonce: U256) -> Self {
+        Account { id, balance, nonce }
     }
 }
 
-pub type State = MerkleTree<PoseidonHasher, Account>;
+#[derive(Default, Clone)]
+pub struct State {
+    inner: MerkleTree<PoseidonHasher, Account>
+}
+
+impl State {
+    pub fn root(&self) -> U256 {
+        self.inner.root()
+    }
+
+    pub fn get(&self, key: &U256) -> Account {
+        match self.inner.get(key) {
+            Some(acc) => acc,
+            None => Account::new(key.clone(), 0.into(), 0.into())
+        }
+    }
+
+    pub fn proof(&self, key: &U256) -> Vec<U256> {
+        self.inner.proof(key)
+    }
+
+    pub fn update(&mut self, key: &U256, value: Account) {
+        self.inner.update(key, value)
+    }
+}
 
 #[derive(Default, Clone)]
 pub struct PoseidonHasher(Vec<Bn128Field>);
 
 impl Hasher for PoseidonHasher {
-    fn write_h256(&mut self, h: &H256) {
+    fn write_h256(&mut self, h: &U256) {
         self.0.push(h.to_bn128_field())
     }
 
-    fn finish(self) -> H256 {
-        poseidon::hash_BN_128(self.0).to_h256()
+    fn finish(self) -> U256 {
+        poseidon::hash_BN_128(self.0).to_u256()
     }
 }
 
@@ -47,10 +71,23 @@ impl ToH256 for Bn128Field {
     }
 }
 
+pub trait ToU256 {
+    fn to_u256(&self) -> U256;
+}
+
+impl ToU256 for Bn128Field {
+    fn to_u256(&self) -> U256 {
+        let mut bytes: [u8; 32] = self.to_byte_vector().try_into().unwrap();
+        bytes.reverse();
+        bytes.into()
+    }
+}
+
 pub trait ToBn128Field {
     fn to_bn128_field(&self) -> Bn128Field;
 }
 
+/*
 impl ToBn128Field for Address {
     fn to_bn128_field(&self) -> Bn128Field {
         let mut bytes = [self.to_fixed_bytes().to_vec(), [0; 12].to_vec()].concat();
@@ -59,6 +96,7 @@ impl ToBn128Field for Address {
         Bn128Field::from_byte_vector(bytes.into())
     }
 }
+*/
 
 impl ToBn128Field for H256 {
     fn to_bn128_field(&self) -> Bn128Field {
@@ -79,17 +117,17 @@ impl ToBn128Field for U256 {
 }
 
 impl Value for Account {
-    fn to_h256(&self) -> H256 {
+    fn to_u256(&self) -> U256 {
         if self.balance.is_zero() && self.nonce.is_zero() {
-            return H256::zero();
+            return 0.into();
         }
 
         poseidon::hash_BN_128(vec![
-            self.addr.to_bn128_field(),
+            self.id.to_bn128_field(),
             self.balance.to_bn128_field(),
             self.nonce.to_bn128_field(),
         ])
-        .to_h256()
+        .to_u256()
     }
 
     fn zero() -> Self {
@@ -104,22 +142,22 @@ mod tests {
     #[test]
     fn empty_tree() {
         let s = State::default();
-        assert_eq!(s.root(), H256::zero());
+        assert_eq!(s.root(), 0.into());
     }
 
     #[test]
     fn add_account() {
         let mut s = State::default();
         s.update(
-            &H256::zero(),
+            &0.into(),
             Account {
-                addr: "0".parse().unwrap(),
+                id: 0.into(),
                 balance: 42.into(),
                 nonce: 1.into(),
             },
         );
-        let acc = s.get(&H256::zero());
-        assert_eq!(acc.addr, "0".parse().unwrap());
+        let acc = s.get(&0.into());
+        assert_eq!(acc.id, 0.into());
         assert_eq!(acc.balance, 42.into());
         assert_eq!(acc.nonce, 1.into());
     }
@@ -139,32 +177,32 @@ mod tests {
         let key_two = H256::from(twos);
 
         let acc0 = Account {
-            addr: "0".parse().unwrap(),
+            id: 0.into(),
             balance: 42.into(),
             nonce: 1.into(),
         };
 
         let acc1 = Account {
-            addr: "1".parse().unwrap(),
+            id: 1.into(),
             balance: 43.into(),
             nonce: 2.into(),
         };
 
         let acc2 = Account {
-            addr: "2".parse().unwrap(),
+            id: 2.into(),
             balance: 44.into(),
             nonce: 3.into(),
         };
 
-        s.update(&key_zero, acc0.clone());
-        s.update(&key_one, acc1.clone());
-        s.update(&key_two, acc2.clone());
+        s.update(&0.into(), acc0.clone());
+        s.update(&1.into(), acc1.clone());
+        s.update(&2.into(), acc2.clone());
 
-        println!("Leaf 0 = {:?}", acc0.to_h256());
-        println!("Leaf 1 = {:?}", acc1.to_h256());
-        println!("Leaf 2 = {:?}", acc2.to_h256());
+        println!("Leaf 0 = {:?}", acc0.to_u256());
+        println!("Leaf 1 = {:?}", acc1.to_u256());
+        println!("Leaf 2 = {:?}", acc2.to_u256());
 
-        let proof = s.proof(&key_zero);
+        let proof = s.proof(&0.into());
         assert_eq!(proof.len(), 256);
 
         println!("Root is {:?}", s.root());
