@@ -1,9 +1,8 @@
-use crate::merkle_tree::{Hasher, MerkleTree, Value};
+use crate::merkle_tree::{MerkleTree, Value};
+use crate::poseidon_hasher::{PoseidonHasher, ToBn128Field, ToU256};
 
 use ethers::types::U256;
-use poseidon::*;
 use serde::{Deserialize, Serialize};
-use zokrates_field::Bn128Field;
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct Account {
@@ -44,43 +43,6 @@ impl State {
     }
 }
 
-#[derive(Default, Clone)]
-pub struct PoseidonHasher(Vec<Bn128Field>);
-
-impl Hasher for PoseidonHasher {
-    fn write_h256(&mut self, h: &U256) {
-        self.0.push(h.to_bn128_field())
-    }
-
-    fn finish(self) -> U256 {
-        poseidon::hash_BN_128(self.0).to_u256()
-    }
-}
-
-pub trait ToU256 {
-    fn to_u256(&self) -> U256;
-}
-
-impl ToU256 for Bn128Field {
-    fn to_u256(&self) -> U256 {
-        let mut bytes: [u8; 32] = self.to_byte_vector().try_into().unwrap();
-        bytes.reverse();
-        bytes.into()
-    }
-}
-
-pub trait ToBn128Field {
-    fn to_bn128_field(&self) -> Bn128Field;
-}
-
-impl ToBn128Field for U256 {
-    fn to_bn128_field(&self) -> Bn128Field {
-        let mut n_bytes = vec![0; 32];
-        self.to_little_endian(&mut n_bytes);
-        Bn128Field::from_byte_vector(n_bytes)
-    }
-}
-
 impl Value for Account {
     fn to_u256(&self) -> U256 {
         if self.balance.is_zero() && self.nonce.is_zero() {
@@ -102,6 +64,8 @@ impl Value for Account {
 
 #[cfg(test)]
 mod tests {
+    use ethers::types::H256;
+
     use super::*;
 
     #[test]
