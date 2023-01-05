@@ -31,6 +31,9 @@ struct BranchKey {
 
 impl BranchKey {
     fn new(height: u8, bitmap: Bitmap<256>) -> Self {
+        if let Some(index) = bitmap.last_index() {
+            assert!(index <= height as usize);
+        }
         Self { height, bitmap }
     }
 
@@ -181,4 +184,17 @@ pub trait Value {
 pub trait Hasher {
     fn write_h256(&mut self, w: &U256);
     fn finish(self) -> U256;
+}
+
+#[cfg(test)]
+mod test {
+    use super::BranchKey;
+
+    #[test]
+    pub fn sibling() {
+        let key = BranchKey::new(0, Default::default());
+        assert_eq!(key.parent(), None);
+        let key = BranchKey::new(0, Default::default());
+        assert_eq!(key.sibling(), None);
+    }
 }
