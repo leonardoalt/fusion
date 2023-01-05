@@ -130,13 +130,14 @@ impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
             return false;
         }
         let mut hash = Self::leaf_hash(key, value);
-        let key = BranchKey::for_leaf(key);
+        let mut key = Some(BranchKey::for_leaf(key));
         for item in proof {
-            hash = if key.is_left_child() {
+            hash = if key.clone().unwrap().is_left_child() {
                 Self::merge_hashes(&hash, item)
             } else {
                 Self::merge_hashes(item, &hash)
-            }
+            };
+            key = key.unwrap().parent();
         }
         hash == *root_hash
     }
