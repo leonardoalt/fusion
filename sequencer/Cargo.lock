@@ -1132,7 +1132,7 @@ dependencies = [
 [[package]]
 name = "ethers"
 version = "1.0.2"
-source = "git+https://github.com/gakonst/ethers-rs#578b1c4d2d3cbed786e5e701d9a25b6d7274e2d5"
+source = "git+https://github.com/gakonst/ethers-rs#3ed83d5dd38e7819605511631aaddcc3e472427e"
 dependencies = [
  "ethers-addressbook",
  "ethers-contract",
@@ -1146,7 +1146,7 @@ dependencies = [
 [[package]]
 name = "ethers-addressbook"
 version = "1.0.2"
-source = "git+https://github.com/gakonst/ethers-rs#578b1c4d2d3cbed786e5e701d9a25b6d7274e2d5"
+source = "git+https://github.com/gakonst/ethers-rs#3ed83d5dd38e7819605511631aaddcc3e472427e"
 dependencies = [
  "ethers-core",
  "once_cell",
@@ -1157,7 +1157,7 @@ dependencies = [
 [[package]]
 name = "ethers-contract"
 version = "1.0.2"
-source = "git+https://github.com/gakonst/ethers-rs#578b1c4d2d3cbed786e5e701d9a25b6d7274e2d5"
+source = "git+https://github.com/gakonst/ethers-rs#3ed83d5dd38e7819605511631aaddcc3e472427e"
 dependencies = [
  "ethers-contract-abigen",
  "ethers-contract-derive",
@@ -1175,7 +1175,7 @@ dependencies = [
 [[package]]
 name = "ethers-contract-abigen"
 version = "1.0.2"
-source = "git+https://github.com/gakonst/ethers-rs#578b1c4d2d3cbed786e5e701d9a25b6d7274e2d5"
+source = "git+https://github.com/gakonst/ethers-rs#3ed83d5dd38e7819605511631aaddcc3e472427e"
 dependencies = [
  "Inflector",
  "cfg-if 1.0.0",
@@ -1199,7 +1199,7 @@ dependencies = [
 [[package]]
 name = "ethers-contract-derive"
 version = "1.0.2"
-source = "git+https://github.com/gakonst/ethers-rs#578b1c4d2d3cbed786e5e701d9a25b6d7274e2d5"
+source = "git+https://github.com/gakonst/ethers-rs#3ed83d5dd38e7819605511631aaddcc3e472427e"
 dependencies = [
  "ethers-contract-abigen",
  "ethers-core",
@@ -1213,7 +1213,7 @@ dependencies = [
 [[package]]
 name = "ethers-core"
 version = "1.0.2"
-source = "git+https://github.com/gakonst/ethers-rs#578b1c4d2d3cbed786e5e701d9a25b6d7274e2d5"
+source = "git+https://github.com/gakonst/ethers-rs#3ed83d5dd38e7819605511631aaddcc3e472427e"
 dependencies = [
  "arrayvec 0.7.2",
  "bytes",
@@ -1244,7 +1244,7 @@ dependencies = [
 [[package]]
 name = "ethers-etherscan"
 version = "1.0.2"
-source = "git+https://github.com/gakonst/ethers-rs#578b1c4d2d3cbed786e5e701d9a25b6d7274e2d5"
+source = "git+https://github.com/gakonst/ethers-rs#3ed83d5dd38e7819605511631aaddcc3e472427e"
 dependencies = [
  "ethers-core",
  "getrandom",
@@ -1260,7 +1260,7 @@ dependencies = [
 [[package]]
 name = "ethers-middleware"
 version = "1.0.2"
-source = "git+https://github.com/gakonst/ethers-rs#578b1c4d2d3cbed786e5e701d9a25b6d7274e2d5"
+source = "git+https://github.com/gakonst/ethers-rs#3ed83d5dd38e7819605511631aaddcc3e472427e"
 dependencies = [
  "async-trait",
  "auto_impl 0.5.0",
@@ -1285,7 +1285,7 @@ dependencies = [
 [[package]]
 name = "ethers-providers"
 version = "1.0.2"
-source = "git+https://github.com/gakonst/ethers-rs#578b1c4d2d3cbed786e5e701d9a25b6d7274e2d5"
+source = "git+https://github.com/gakonst/ethers-rs#3ed83d5dd38e7819605511631aaddcc3e472427e"
 dependencies = [
  "async-trait",
  "auto_impl 1.0.1",
@@ -1320,7 +1320,7 @@ dependencies = [
 [[package]]
 name = "ethers-signers"
 version = "1.0.2"
-source = "git+https://github.com/gakonst/ethers-rs#578b1c4d2d3cbed786e5e701d9a25b6d7274e2d5"
+source = "git+https://github.com/gakonst/ethers-rs#3ed83d5dd38e7819605511631aaddcc3e472427e"
 dependencies = [
  "async-trait",
  "coins-bip32",
@@ -2504,7 +2504,6 @@ dependencies = [
 [[package]]
 name = "poseidon"
 version = "0.1.0"
-source = "git+https://github.com/JordanCason/Poseidon_BN128?branch=master#45bab6a0334db095c5709c73ebf90a001b3a8ce2"
 dependencies = [
  "zokrates_field",
 ]
@@ -3050,9 +3049,9 @@ dependencies = [
  "tower",
  "tower-http",
  "zokrates_abi",
- "zokrates_analysis",
  "zokrates_ast",
  "zokrates_common",
+ "zokrates_core",
  "zokrates_field",
  "zokrates_interpreter",
 ]
@@ -3410,9 +3409,9 @@ checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
 
 [[package]]
 name = "tokio"
-version = "1.23.0"
+version = "1.23.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eab6d665857cc6ca78d6e80303a02cea7a7851e85dfbd77cbdc09bd129f1ef46"
+checksum = "38a54aca0c15d014013256222ba0ebed095673f89345dd79119d912eb561b7a8"
 dependencies = [
  "autocfg",
  "bytes",
@@ -3966,7 +3965,7 @@ dependencies = [
 [[package]]
 name = "zokrates_abi"
 version = "0.1.7"
-source = "git+https://github.com/ZoKrates/ZoKrates?branch=develop#a9d6e974b90dc88b742a9508e29d4de7b0fe2eab"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.3#d9006cbab88f61a3d04ec6aa6215fd05feba7acf"
 dependencies = [
  "serde",
  "serde_derive",
@@ -3976,31 +3975,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "zokrates_analysis"
-version = "0.1.0"
-source = "git+https://github.com/ZoKrates/ZoKrates?branch=develop#a9d6e974b90dc88b742a9508e29d4de7b0fe2eab"
-dependencies = [
- "cfg-if 0.1.10",
- "csv",
- "lazy_static",
- "log",
- "num",
- "num-bigint 0.2.6",
- "reduce",
- "serde",
- "serde_json",
- "typed-arena",
- "zokrates_ast",
- "zokrates_common",
- "zokrates_embed",
- "zokrates_field",
- "zokrates_pest_ast",
-]
-
-[[package]]
 name = "zokrates_ast"
 version = "0.1.3"
-source = "git+https://github.com/ZoKrates/ZoKrates?branch=develop#a9d6e974b90dc88b742a9508e29d4de7b0fe2eab"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.3#d9006cbab88f61a3d04ec6aa6215fd05feba7acf"
 dependencies = [
  "ark-bls12-377",
  "cfg-if 0.1.10",
@@ -4019,15 +3996,35 @@ dependencies = [
 [[package]]
 name = "zokrates_common"
 version = "0.1.1"
-source = "git+https://github.com/ZoKrates/ZoKrates?branch=develop#a9d6e974b90dc88b742a9508e29d4de7b0fe2eab"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.3#d9006cbab88f61a3d04ec6aa6215fd05feba7acf"
+
+[[package]]
+name = "zokrates_core"
+version = "0.7.2"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.3#d9006cbab88f61a3d04ec6aa6215fd05feba7acf"
 dependencies = [
+ "cfg-if 0.1.10",
+ "csv",
+ "lazy_static",
+ "log",
+ "num",
+ "num-bigint 0.2.6",
+ "reduce",
  "serde",
+ "serde_json",
+ "typed-arena",
+ "zokrates_ast",
+ "zokrates_common",
+ "zokrates_embed",
+ "zokrates_field",
+ "zokrates_interpreter",
+ "zokrates_pest_ast",
 ]
 
 [[package]]
 name = "zokrates_embed"
 version = "0.1.8"
-source = "git+https://github.com/ZoKrates/ZoKrates?branch=develop#a9d6e974b90dc88b742a9508e29d4de7b0fe2eab"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.3#d9006cbab88f61a3d04ec6aa6215fd05feba7acf"
 dependencies = [
  "ark-bls12-377",
  "ark-bw6-761",
@@ -4046,7 +4043,7 @@ dependencies = [
 [[package]]
 name = "zokrates_field"
 version = "0.5.2"
-source = "git+https://github.com/ZoKrates/ZoKrates?branch=develop#a9d6e974b90dc88b742a9508e29d4de7b0fe2eab"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.3#d9006cbab88f61a3d04ec6aa6215fd05feba7acf"
 dependencies = [
  "ark-bls12-377",
  "ark-bls12-381",
@@ -4070,7 +4067,7 @@ dependencies = [
 [[package]]
 name = "zokrates_interpreter"
 version = "0.1.1"
-source = "git+https://github.com/ZoKrates/ZoKrates?branch=develop#a9d6e974b90dc88b742a9508e29d4de7b0fe2eab"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.3#d9006cbab88f61a3d04ec6aa6215fd05feba7acf"
 dependencies = [
  "ark-bls12-377",
  "num",
@@ -4078,7 +4075,6 @@ dependencies = [
  "pairing_ce",
  "serde",
  "zokrates_abi",
- "zokrates_analysis",
  "zokrates_ast",
  "zokrates_embed",
  "zokrates_field",
@@ -4087,7 +4083,7 @@ dependencies = [
 [[package]]
 name = "zokrates_parser"
 version = "0.3.2"
-source = "git+https://github.com/ZoKrates/ZoKrates?branch=develop#a9d6e974b90dc88b742a9508e29d4de7b0fe2eab"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.3#d9006cbab88f61a3d04ec6aa6215fd05feba7acf"
 dependencies = [
  "pest",
  "pest_derive",
@@ -4096,7 +4092,7 @@ dependencies = [
 [[package]]
 name = "zokrates_pest_ast"
 version = "0.3.0"
-source = "git+https://github.com/ZoKrates/ZoKrates?branch=develop#a9d6e974b90dc88b742a9508e29d4de7b0fe2eab"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.3#d9006cbab88f61a3d04ec6aa6215fd05feba7acf"
 dependencies = [
  "from-pest",
  "lazy_static",

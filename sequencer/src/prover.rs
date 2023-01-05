@@ -102,8 +102,10 @@ impl Prover {
 
         let _public_inputs = prog.public_inputs();
 
+        let encoded = arguments.encode();
+        println!("{:?}", encoded);
         let witness = interpreter
-            .execute_with_log_stream(prog, &arguments.encode(), &mut std::io::stdout())
+            .execute_with_log_stream(prog, &encoded, &mut std::io::stdout())
             .map_err(|e| format!("Execution failed: {e}"))?;
 
         use zokrates_abi::Decode;
