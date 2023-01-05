@@ -1,8 +1,8 @@
 use crate::merkle_tree::{Hasher, MerkleTree, Value};
 
 use ethers::types::{H256, U256};
-use serde::{Serialize, Deserialize};
 use poseidon::*;
+use serde::{Deserialize, Serialize};
 use zokrates_field::Bn128Field;
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
@@ -20,7 +20,7 @@ impl Account {
 
 #[derive(Default, Clone)]
 pub struct State {
-    inner: MerkleTree<PoseidonHasher, Account>
+    inner: MerkleTree<PoseidonHasher, Account>,
 }
 
 impl State {
@@ -30,8 +30,8 @@ impl State {
 
     pub fn get(&self, key: &U256) -> Account {
         match self.inner.get(key) {
-            Some(acc) => acc,
-            None => Account::new(key.clone(), 0.into(), 0.into())
+            Some(acc) => acc.clone(),
+            None => Account::new(*key, 0.into(), 0.into()),
         }
     }
 
@@ -166,15 +166,15 @@ mod tests {
     fn merkle_proof() {
         let mut s = State::default();
 
-        let key_zero = H256::zero();
+        let _key_zero = H256::zero();
 
         let mut ones: [u8; 32] = [0; 32];
         ones[31] = 1;
-        let key_one = H256::from(ones);
+        let _key_one = H256::from(ones);
 
         let mut twos: [u8; 32] = [0; 32];
         twos[31] = 2;
-        let key_two = H256::from(twos);
+        let _key_two = H256::from(twos);
 
         let acc0 = Account {
             id: 0.into(),
@@ -206,6 +206,6 @@ mod tests {
         assert_eq!(proof.len(), 256);
 
         println!("Root is {:?}", s.root());
-        println!("Proof is {:?}", proof);
+        println!("Proof is {proof:?}");
     }
 }

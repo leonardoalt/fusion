@@ -5,12 +5,7 @@ use std::{
     time::Duration,
 };
 
-use ethers::{
-    providers::{Http, Provider},
-    signers::LocalWallet,
-    types,
-    utils::keccak256,
-};
+use ethers::{types, utils::keccak256};
 use hyper::Method;
 use jsonrpsee::{
     server::{AllowHosts, ServerBuilder, ServerHandle},
@@ -18,10 +13,6 @@ use jsonrpsee::{
 };
 use tokio::{task, time::interval};
 use tower_http::cors::{Any, CorsLayer};
-
-use sequencer::node::Node;
-
-use l1_verifier_bindings::verifier;
 
 use sequencer::api::*;
 use sequencer::conversions::*;
@@ -147,7 +138,11 @@ fn apply_tx(mut state: State, tx: &SignedTx) -> State {
     let account_sender = state.get(&key_sender);
     let account_to = state.get(&key_to);
 
-    let new_account_sender = Account::new(key_sender, account_sender.balance - tx.tx.value, tx.tx.nonce);
+    let new_account_sender = Account::new(
+        key_sender,
+        account_sender.balance - tx.tx.value,
+        tx.tx.nonce,
+    );
     let new_account_to = Account::new(key_to, account_to.balance + tx.tx.value, account_to.nonce);
 
     state.update(&key_sender, new_account_sender);
