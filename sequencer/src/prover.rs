@@ -55,7 +55,6 @@ impl ToVecBool for Bitmap<256> {
         (0..256).for_each(|b| {
             v.push(self.get(b));
         });
-        v.reverse();
         v
     }
 }

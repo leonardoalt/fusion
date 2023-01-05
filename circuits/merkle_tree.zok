@@ -35,7 +35,7 @@ def hash_leaf(Account acc) -> field {
 	return if acc.balance == 0 && acc.nonce == 0 {
 		0
 	} else {
-		hash::<3>([acc.id, acc.balance, acc.nonce])
+		hash::<2>([acc.id, hash::<2>([acc.balance, acc.nonce])])
 	};
 }
 

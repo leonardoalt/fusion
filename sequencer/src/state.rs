@@ -50,7 +50,6 @@ impl Value for Account {
         }
 
         poseidon::hash_BN_128(vec![
-            self.id.to_bn128_field(),
             self.balance.to_bn128_field(),
             self.nonce.to_bn128_field(),
         ])
