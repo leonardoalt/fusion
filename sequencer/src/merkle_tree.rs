@@ -19,7 +19,7 @@ use std::collections::BTreeMap;
 #[derive(Default, Clone)]
 pub struct MerkleTree<H, T> {
     /// Mapping from leaf index to value.
-    leafs: BTreeMap<U256, T>,
+    leaves: BTreeMap<U256, T>,
     /// Mapping from internal node identifier to its hash.
     branches: BTreeMap<BranchKey, BranchNode>,
     phantom: PhantomData<H>,
@@ -87,7 +87,7 @@ impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
     }
 
     pub fn get(&self, key: &U256) -> Option<&T> {
-        self.leafs.get(key)
+        self.leaves.get(key)
     }
 
     pub fn proof(&self, key: &U256) -> Vec<U256> {
@@ -103,7 +103,7 @@ impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
     }
 
     pub fn update(&mut self, key: &U256, value: T) {
-        self.leafs.insert(*key, value.clone());
+        self.leaves.insert(*key, value.clone());
 
         let branch_key = BranchKey::for_leaf(key);
         // TODO hash the key together with the value.
@@ -114,7 +114,7 @@ impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
     }
 
     pub fn delete(&mut self, key: &U256) {
-        self.leafs.remove(key);
+        self.leaves.remove(key);
 
         let branch_key = BranchKey::for_leaf(key);
         self.branches.remove(&branch_key);
