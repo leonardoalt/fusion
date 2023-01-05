@@ -93,12 +93,10 @@ impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
     pub fn proof(&self, key: &U256) -> Vec<U256> {
         let mut siblings = vec![];
 
-        let mut leaf_key = Some(BranchKey::for_leaf(key));
-        // TODO make this safer
-        for _ in (0..=255).rev() {
-            let inner_key = leaf_key.unwrap();
-            siblings.push(self.branch_root(&inner_key.sibling()));
-            leaf_key = inner_key.parent();
+        let mut maybe_key = Some(BranchKey::for_leaf(key));
+        while let Some(key) = maybe_key {
+            siblings.push(self.branch_hash(&key.sibling()));
+            maybe_key = key.parent();
         }
 
         siblings
@@ -108,27 +106,26 @@ impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
         // TODO remove entry from `self.keys` if `T == 0`.
         self.leafs.insert(*key, value.clone());
 
-        let branch_key = BranchKey::for_leaf(key);
+        let mut branch_key = BranchKey::for_leaf(key);
+        // TODO hash the key together with the value.
         self.branches
             .insert(branch_key.clone(), BranchNode(value.to_u256()));
 
-        let mut last_key = branch_key;
         // TODO make this safer
-        for _ in (0..=254).rev() {
-            let parent = last_key.parent().unwrap();
+        while let Some(parent) = branch_key.parent() {
             let left = parent.left_child().unwrap();
             let right = parent.right_child().unwrap();
 
             self.branches
                 .insert(parent.clone(), BranchNode(self.merge_nodes(&left, &right)));
 
-            last_key = parent;
+            branch_key = parent;
         }
     }
 
     fn merge_nodes(&self, key1: &BranchKey, key2: &BranchKey) -> U256 {
-        let v1 = self.branch_root(key1);
-        let v2 = self.branch_root(key2);
+        let v1 = self.branch_hash(key1);
+        let v2 = self.branch_hash(key2);
 
         if v1.is_zero() && v2.is_zero() {
             0.into()
@@ -144,7 +141,7 @@ impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
         }
     }
 
-    fn branch_root(&self, key: &BranchKey) -> U256 {
+    fn branch_hash(&self, key: &BranchKey) -> U256 {
         match self.branches.get(key) {
             Some(value) => value.0,
             _ => 0.into(),
