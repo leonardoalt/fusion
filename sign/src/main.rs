@@ -58,7 +58,7 @@ async fn send(send_args: CLITx) -> anyhow::Result<()> {
 impl From<CLITx> for Tx {
     fn from(tx: CLITx) -> Self {
         Self {
-            from: tx.from,
+            sender: tx.sender,
             to: tx.to,
             nonce: tx.nonce,
             value: tx.value,
@@ -70,7 +70,7 @@ impl From<CLITx> for SignedTx {
     fn from(tx: CLITx) -> Self {
         Self {
             tx: Tx {
-                from: tx.from,
+                sender: tx.sender,
                 to: tx.to,
                 nonce: tx.nonce,
                 value: tx.value,
@@ -110,11 +110,11 @@ pub struct CLITx {
     #[clap(
         long,
         short = 'f',
-        value_name = "FROM_ADDRESS",
-        help = "The address of the from address.",
+        value_name = "SENDER_ADDRESS",
+        help = "The address of the sender address.",
         default_value = "0x0000000000000000000000000000000000000000"
     )]
-    pub from: ethers::types::Address,
+    pub sender: ethers::types::Address,
     #[clap(
         long,
         short = 't',
@@ -156,7 +156,7 @@ fn hash_tx(sig_args: &Tx) -> ethers::types::TxHash {
     sig_args.nonce.to_big_endian(&mut nonce_bytes);
 
     let msg = [
-        sig_args.from.as_fixed_bytes().to_vec(),
+        sig_args.sender.as_fixed_bytes().to_vec(),
         sig_args.to.as_fixed_bytes().to_vec(),
         value_bytes,
         nonce_bytes,
@@ -169,7 +169,7 @@ fn hash_tx(sig_args: &Tx) -> ethers::types::TxHash {
 fn verify_tx_signature(signed_tx: &SignedTx) -> anyhow::Result<()> {
     let hash = hash_tx(&signed_tx.tx).as_fixed_bytes().to_vec();
     let decoded = signed_tx.signature.parse::<types::Signature>()?;
-    decoded.verify(hash, signed_tx.tx.from)?;
+    decoded.verify(hash, signed_tx.tx.sender)?;
 
     Ok(())
 }
