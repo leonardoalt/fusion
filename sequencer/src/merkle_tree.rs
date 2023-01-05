@@ -11,11 +11,11 @@ use std::collections::BTreeMap;
 /// Each node, including intermediate nodes but excluding the root,
 /// is represented by a `BranchKey`, containing its height and
 /// the binary path from the root until that node, indexed [0, 256).
-/// For leaves, `bitmap` should be the binary representation of
+/// For leaves, `bitmap` should be the reversed binary representation of
 /// its leaf index [0, 2^256 - 1).
-/// For intermediate nodes, every bit in [height + 1, 256) should be
+/// For intermediate nodes, every bit in [0, height) should be
 /// `false`.
-/// The leaves have height 255.
+/// The leaves have height 0.
 #[derive(Default, Clone)]
 pub struct MerkleTree<H, T> {
     /// Mapping from leaf index to value.
@@ -33,23 +33,23 @@ struct BranchKey {
 
 impl BranchKey {
     fn new(height: u8, bitmap: Bitmap<256>) -> Self {
-        if let Some(index) = bitmap.last_index() {
-            assert!(index <= height as usize);
+        if let Some(index) = bitmap.first_index() {
+            assert!(index >= height as usize);
         }
         Self { height, bitmap }
     }
 
     fn for_leaf(key: &U256) -> Self {
-        BranchKey::new(255, key.to_bitmap())
+        BranchKey::new(0, key.to_bitmap())
     }
 
     fn parent(&self) -> Option<Self> {
         match self.height {
-            0 => None,
+            255 => None,
             _ => {
                 let mut p_map = self.bitmap;
                 p_map.set(self.height as usize, false);
-                Some(Self::new(self.height - 1, p_map))
+                Some(Self::new(self.height + 1, p_map))
             }
         }
     }
@@ -67,11 +67,11 @@ impl BranchKey {
 
     fn left_child(&self) -> Option<Self> {
         match self.height {
-            255 => None,
+            0 => None,
             _ => {
                 let mut p_map = self.bitmap;
-                p_map.set((self.height as usize) + 1, false);
-                Some(Self::new(self.height + 1, p_map))
+                p_map.set((self.height as usize) - 1, false);
+                Some(Self::new(self.height - 1, p_map))
             }
         }
     }
@@ -102,7 +102,7 @@ struct BranchNode(U256);
 
 impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
     pub fn root_hash(&self) -> U256 {
-        let left = BranchKey::new(0, Bitmap::<256>::default());
+        let left = BranchKey::new(255, Bitmap::<256>::default());
         let right = left.sibling();
         self.merge_nodes(&left, &right)
     }
@@ -216,9 +216,6 @@ pub trait ToBitmap {
 }
 
 impl ToBitmap for U256 {
-    // TODO this function needs to ensure that
-    // the returned bitmap is the binary representation
-    // of the given number.
     fn to_bitmap(&self) -> Bitmap<256> {
         let x1 = self.low_u128();
         let x2 = (self >> 128).low_u128();
@@ -250,6 +247,24 @@ mod test {
         fn zero() -> Self {
             Default::default()
         }
+    }
+
+    #[test]
+    fn siblings() {
+        let zero = BranchKey::for_leaf(&0.into());
+        let one = BranchKey::for_leaf(&1.into());
+        let sib = zero.sibling();
+        assert_eq!(one, sib);
+
+        let six = BranchKey::for_leaf(&6.into());
+        let seven = BranchKey::for_leaf(&7.into());
+        let six_sib = six.sibling();
+        assert_eq!(seven, six_sib);
+
+        let last = BranchKey::for_leaf(&U256::max_value());
+        let second_last = BranchKey::for_leaf(&(U256::max_value() - 1));
+        let last_sib = last.sibling();
+        assert_eq!(second_last, last_sib);
     }
 
     #[test]
