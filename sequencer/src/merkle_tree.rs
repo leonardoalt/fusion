@@ -74,6 +74,10 @@ impl BranchKey {
     fn right_child(&self) -> Option<Self> {
         self.left_child().map(|node| node.sibling())
     }
+
+    fn is_left_child(&self) -> bool {
+        !self.bitmap.get(self.height as usize)
+    }
 }
 
 #[derive(Clone)]
@@ -121,6 +125,22 @@ impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
         self.update_parents(branch_key);
     }
 
+    pub fn verify_proof(root_hash: &U256, key: &U256, value: &T, proof: &[U256]) -> bool {
+        if proof.len() != 256 {
+            return false;
+        }
+        let key = BranchKey::for_leaf(key);
+        let mut hash = value.to_u256();
+        for item in proof {
+            hash = if key.is_left_child() {
+                Self::merge_hashes(&hash, item)
+            } else {
+                Self::merge_hashes(item, &hash)
+            }
+        }
+        hash == *root_hash
+    }
+
     fn update_parents(&mut self, mut branch_key: BranchKey) {
         // TODO make this safer
         while let Some(parent) = branch_key.parent() {
@@ -134,17 +154,20 @@ impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
     fn merge_nodes(&self, key1: &BranchKey, key2: &BranchKey) -> U256 {
         let v1 = self.branch_hash(key1);
         let v2 = self.branch_hash(key2);
+        Self::merge_hashes(&v1, &v2)
+    }
 
+    fn merge_hashes(v1: &U256, v2: &U256) -> U256 {
         if v1.is_zero() && v2.is_zero() {
             0.into()
         } else if v1.is_zero() {
-            v2
+            *v2
         } else if v2.is_zero() {
-            v1
+            *v1
         } else {
             let mut h = H::default();
-            h.write_h256(&v1);
-            h.write_h256(&v2);
+            h.write_h256(v1);
+            h.write_h256(v2);
             h.finish()
         }
     }
@@ -200,4 +223,99 @@ pub trait Value {
 pub trait Hasher {
     fn write_h256(&mut self, w: &U256);
     fn finish(self) -> U256;
+}
+
+#[cfg(test)]
+mod test {
+    use crate::poseidon_hasher::PoseidonHasher;
+
+    use super::*;
+
+    impl Value for U256 {
+        fn to_u256(&self) -> U256 {
+            *self
+        }
+
+        fn zero() -> Self {
+            Default::default()
+        }
+    }
+
+    #[test]
+    fn empty_proof() {
+        let tree = MerkleTree::<PoseidonHasher, U256>::default();
+        let proof = tree.proof(&1.into());
+        let root_hash = tree.root_hash();
+        assert_eq!(proof.len(), 256);
+        assert!(MerkleTree::<PoseidonHasher, U256>::verify_proof(
+            &root_hash,
+            &1.into(),
+            &0.into(),
+            &proof
+        ));
+    }
+
+    #[test]
+    fn single_item_proof() {
+        let mut tree = MerkleTree::<PoseidonHasher, U256>::default();
+        tree.update(&1.into(), 7.into());
+        let proof = tree.proof(&1.into());
+        let root_hash = tree.root_hash();
+        assert_eq!(proof.len(), 256);
+        assert!(MerkleTree::<PoseidonHasher, U256>::verify_proof(
+            &root_hash,
+            &1.into(),
+            &7.into(),
+            &proof
+        ));
+
+        // Proof is invalid on a wrong value
+        assert!(!MerkleTree::<PoseidonHasher, U256>::verify_proof(
+            &root_hash,
+            &1.into(),
+            &8.into(),
+            &proof
+        ));
+
+        // Proof is invalid on a wrong key
+        assert!(!MerkleTree::<PoseidonHasher, U256>::verify_proof(
+            &root_hash,
+            &0.into(),
+            &7.into(),
+            &proof
+        ));
+    }
+
+    #[test]
+    fn multiple_items_proof() {
+        let mut tree = MerkleTree::<PoseidonHasher, U256>::default();
+        tree.update(&0.into(), 1.into());
+        tree.update(&1.into(), 2.into());
+        tree.update(&12.into(), 3.into());
+        let root_hash = tree.root_hash();
+        assert!(MerkleTree::<PoseidonHasher, U256>::verify_proof(
+            &root_hash,
+            &0.into(),
+            &1.into(),
+            &tree.proof(&0.into())
+        ));
+        assert!(MerkleTree::<PoseidonHasher, U256>::verify_proof(
+            &root_hash,
+            &1.into(),
+            &2.into(),
+            &tree.proof(&1.into())
+        ));
+        assert!(MerkleTree::<PoseidonHasher, U256>::verify_proof(
+            &root_hash,
+            &11.into(),
+            &0.into(),
+            &tree.proof(&11.into())
+        ));
+        assert!(MerkleTree::<PoseidonHasher, U256>::verify_proof(
+            &root_hash,
+            &12.into(),
+            &3.into(),
+            &tree.proof(&12.into())
+        ));
+    }
 }
