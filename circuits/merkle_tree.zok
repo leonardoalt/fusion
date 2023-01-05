@@ -10,7 +10,7 @@ struct Tx {
 }
 
 struct Account {
-	field addr;
+	field id;
 	field balance;
 	field nonce;
 }
@@ -35,7 +35,7 @@ def hash_leaf(Account acc) -> field {
 	return if acc.balance == 0 && acc.nonce == 0 {
 		0
 	} else {
-		hash::<3>([acc.addr, acc.balance, acc.nonce])
+		hash::<3>([acc.id, acc.balance, acc.nonce])
 	};
 }
 
@@ -59,12 +59,12 @@ def main(field preRoot, Tx tx, Account preAccount, private field postRoot, priva
 	assert(verify_merkle_tree(preRoot, hash_leaf(preAccount), directionSelector, prePath));
 
 	/* Apply tx changes */
-	assert(tx.sender == preAccount.addr);
+	assert(tx.sender == preAccount.id);
 	assert(preAccount.balance >= tx.value);
 	assert(preAccount.nonce < tx.nonce);
 
 	Account postAccount = Account {
-		addr: preAccount.addr,
+		id: preAccount.id,
 		balance: preAccount.balance - tx.value,
 		nonce: tx.nonce
 	};
