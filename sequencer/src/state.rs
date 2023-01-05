@@ -64,8 +64,6 @@ impl Value for Account {
 
 #[cfg(test)]
 mod tests {
-    use ethers::types::H256;
-
     use super::*;
 
     #[test]

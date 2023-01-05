@@ -1,5 +1,5 @@
 use bitmaps::Bitmap;
-use ethers::types::{H256, U256};
+use ethers::types::U256;
 
 use core::marker::PhantomData;
 use std::collections::BTreeMap;
@@ -213,18 +213,6 @@ impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
 
 pub trait ToBitmap {
     fn to_bitmap(&self) -> Bitmap<256>;
-}
-
-impl ToBitmap for H256 {
-    // TODO this function needs to ensure that
-    // the returned bitmap is the binary representation
-    // of the given number.
-    fn to_bitmap(&self) -> Bitmap<256> {
-        let u = U256::from_little_endian(self.as_fixed_bytes());
-        let x1 = u.low_u128();
-        let x2 = (u >> 128).low_u128();
-        Bitmap::<256>::from([x1, x2])
-    }
 }
 
 impl ToBitmap for U256 {
