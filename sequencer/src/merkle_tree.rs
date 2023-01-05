@@ -103,22 +103,30 @@ impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
     }
 
     pub fn update(&mut self, key: &U256, value: T) {
-        // TODO remove entry from `self.keys` if `T == 0`.
         self.leafs.insert(*key, value.clone());
 
-        let mut branch_key = BranchKey::for_leaf(key);
+        let branch_key = BranchKey::for_leaf(key);
         // TODO hash the key together with the value.
         self.branches
             .insert(branch_key.clone(), BranchNode(value.to_u256()));
 
+        self.update_parents(branch_key);
+    }
+
+    pub fn delete(&mut self, key: &U256) {
+        self.leafs.remove(key);
+
+        let branch_key = BranchKey::for_leaf(key);
+        self.branches.remove(&branch_key);
+        self.update_parents(branch_key);
+    }
+
+    fn update_parents(&mut self, mut branch_key: BranchKey) {
         // TODO make this safer
         while let Some(parent) = branch_key.parent() {
             let left = parent.left_child().unwrap();
             let right = parent.right_child().unwrap();
-
-            self.branches
-                .insert(parent.clone(), BranchNode(self.merge_nodes(&left, &right)));
-
+            self.set_branch(&parent, BranchNode(self.merge_nodes(&left, &right)));
             branch_key = parent;
         }
     }
@@ -145,6 +153,14 @@ impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
         match self.branches.get(key) {
             Some(value) => value.0,
             _ => 0.into(),
+        }
+    }
+
+    fn set_branch(&mut self, key: &BranchKey, value: BranchNode) {
+        if value.0.is_zero() {
+            self.branches.remove(key);
+        } else {
+            self.branches.insert(key.clone(), value);
         }
     }
 }
