@@ -1,6 +1,6 @@
 use crate::merkle_tree::{Hasher, MerkleTree, Value};
 
-use ethers::types::{H256, U256};
+use ethers::types::U256;
 use poseidon::*;
 use serde::{Deserialize, Serialize};
 use zokrates_field::Bn128Field;
@@ -57,20 +57,6 @@ impl Hasher for PoseidonHasher {
     }
 }
 
-pub trait ToH256 {
-    fn to_h256(&self) -> H256;
-}
-
-impl ToH256 for Bn128Field {
-    fn to_h256(&self) -> H256 {
-        // `to_byte_vector` returns as little endian
-        // we reverse to keep our H256 as big endian
-        let mut bytes: [u8; 32] = self.to_byte_vector().try_into().unwrap();
-        bytes.reverse();
-        bytes.into()
-    }
-}
-
 pub trait ToU256 {
     fn to_u256(&self) -> U256;
 }
@@ -85,27 +71,6 @@ impl ToU256 for Bn128Field {
 
 pub trait ToBn128Field {
     fn to_bn128_field(&self) -> Bn128Field;
-}
-
-/*
-impl ToBn128Field for Address {
-    fn to_bn128_field(&self) -> Bn128Field {
-        let mut bytes = [self.to_fixed_bytes().to_vec(), [0; 12].to_vec()].concat();
-        //bytes.reverse();
-        println!("{:?}", bytes);
-        Bn128Field::from_byte_vector(bytes.into())
-    }
-}
-*/
-
-impl ToBn128Field for H256 {
-    fn to_bn128_field(&self) -> Bn128Field {
-        // `from_byte_vector` takes little endian
-        // we keep our H256 in big endian so need to reverse here
-        let mut bytes = self.to_fixed_bytes();
-        bytes.reverse();
-        Bn128Field::from_byte_vector(bytes.into())
-    }
 }
 
 impl ToBn128Field for U256 {
@@ -165,16 +130,6 @@ mod tests {
     #[test]
     fn merkle_proof() {
         let mut s = State::default();
-
-        let _key_zero = H256::zero();
-
-        let mut ones: [u8; 32] = [0; 32];
-        ones[31] = 1;
-        let _key_one = H256::from(ones);
-
-        let mut twos: [u8; 32] = [0; 32];
-        twos[31] = 2;
-        let _key_two = H256::from(twos);
 
         let acc0 = Account {
             id: 0.into(),

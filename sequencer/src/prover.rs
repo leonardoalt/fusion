@@ -87,8 +87,7 @@ impl Prover {
         };
 
         let inputs = CircuitInput::new(tx, pre_state, post_state);
-        println!("\n\n{}\n\n", serde_json::to_string(&inputs).unwrap());
-        //return Ok(());
+        //println!("\n\n{}\n\n", serde_json::to_string(&inputs).unwrap());
 
         let arguments = parse_strict::<Bn128Field>(
             serde_json::to_string(&inputs).unwrap().as_str(),
@@ -103,7 +102,6 @@ impl Prover {
         let _public_inputs = prog.public_inputs();
 
         let encoded = arguments.encode();
-        println!("{:?}", encoded);
         let witness = interpreter
             .execute_with_log_stream(prog, &encoded, &mut std::io::stdout())
             .map_err(|e| format!("Execution failed: {e}"))?;
