@@ -11,12 +11,14 @@ use serde_json::from_reader;
 use serde_tuple::*;
 
 use zokrates_abi::{parse_strict, Encode, Inputs};
-use zokrates_ast::ir::ProgEnum;
+use zokrates_ark::Ark;
+use zokrates_ast::ir::{self, ProgEnum, Witness};
 use zokrates_ast::typed::abi::Abi;
 use zokrates_field::Bn128Field;
+use zokrates_proof_systems::*;
 
 use std::fs::File;
-use std::io::BufReader;
+use std::io::{BufReader, Read};
 use std::path::Path;
 
 #[derive(Serialize_tuple, Deserialize_tuple, Debug)]
@@ -73,7 +75,38 @@ impl Prover {
             ProgEnum::Bn128Program(p) => p,
             _ => panic!(),
         };
+        let prog = prog.collect();
 
+        let witness = Self::compute_witness(prog.clone(), tx, pre_state, post_state)?;
+
+        let pk_path = Path::new("../circuits/proving.key");
+        let pk_file = File::open(pk_path)
+            .map_err(|why| format!("Could not open {}: {}", pk_path.display(), why))?;
+
+        let mut pk: Vec<u8> = Vec::new();
+        let mut pk_reader = BufReader::new(pk_file);
+        pk_reader
+            .read_to_end(&mut pk)
+            .map_err(|why| format!("Could not read {}: {}", pk_path.display(), why))?;
+
+        let proof: Proof<Bn128Field, G16> = Ark::generate_proof(prog, witness, pk);
+
+        let proof = serde_json::to_string_pretty(&TaggedProof::<Bn128Field, G16>::new(
+            proof.proof,
+            proof.inputs,
+        ))
+        .unwrap();
+
+        println!("Proof:\n{proof}");
+        Ok(())
+    }
+
+    fn compute_witness<I: IntoIterator<Item = ir::Statement<Bn128Field>>>(
+        prog: ir::ProgIterator<Bn128Field, I>,
+        tx: &api::Tx,
+        pre_state: &State,
+        post_state: &State,
+    ) -> Result<Witness<Bn128Field>, String> {
         let signature = {
             let path = Path::new("../circuits/abi.json");
             let file = File::open(path)
@@ -88,7 +121,7 @@ impl Prover {
         let inputs = CircuitInput::new(tx, pre_state, post_state);
         //println!("\n\n{}\n\n", serde_json::to_string(&inputs).unwrap());
 
-        let arguments = parse_strict::<Bn128Field>(
+        let arguments = parse_strict(
             serde_json::to_string(&inputs).unwrap().as_str(),
             signature.inputs,
         )
@@ -105,6 +138,8 @@ impl Prover {
             .execute_with_log_stream(prog, &encoded, &mut std::io::stdout())
             .map_err(|e| format!("Execution failed: {e}"))?;
 
+        /*
+        // Uncomment to see the witness verification result values
         use zokrates_abi::Decode;
 
         let results_json_value: serde_json::Value =
@@ -112,7 +147,8 @@ impl Prover {
                 .into_serde_json();
 
         println!("\nWitness: \n{results_json_value}\n");
+        */
 
-        Ok(())
+        Ok(witness)
     }
 }
