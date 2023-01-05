@@ -110,9 +110,9 @@ impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
         self.leaves.insert(*key, value.clone());
 
         let branch_key = BranchKey::for_leaf(key);
-        // TODO hash the key together with the value.
+
         self.branches
-            .insert(branch_key.clone(), BranchNode(value.to_u256()));
+            .insert(branch_key.clone(), BranchNode(Self::leaf_hash(key, &value)));
 
         self.update_parents(branch_key);
     }
@@ -129,8 +129,8 @@ impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
         if proof.len() != 256 {
             return false;
         }
+        let mut hash = Self::leaf_hash(key, value);
         let key = BranchKey::for_leaf(key);
-        let mut hash = value.to_u256();
         for item in proof {
             hash = if key.is_left_child() {
                 Self::merge_hashes(&hash, item)
@@ -176,6 +176,20 @@ impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
         match self.branches.get(key) {
             Some(value) => value.0,
             _ => 0.into(),
+        }
+    }
+
+    /// Hashes the key and the value together. Returns zero if the value is zero
+    /// (but hashes even if the key is zero).
+    fn leaf_hash(key: &U256, value: &T) -> U256 {
+        let value = value.to_u256();
+        if value.is_zero() {
+            0.into()
+        } else {
+            let mut h = H::default();
+            h.write_h256(key);
+            h.write_h256(&value);
+            h.finish()
         }
     }
 
@@ -239,6 +253,35 @@ mod test {
         fn zero() -> Self {
             Default::default()
         }
+    }
+
+    #[test]
+    fn zero_and_nonexisting_is_same() {
+        let mut tree = MerkleTree::<PoseidonHasher, U256>::default();
+        let empty_root_hash = tree.root_hash();
+        tree.update(&1.into(), 0.into());
+        assert_eq!(tree.root_hash(), empty_root_hash);
+        tree.update(&0.into(), 0.into());
+        assert_eq!(tree.root_hash(), empty_root_hash);
+        tree.update(&23.into(), 0.into());
+        assert_eq!(tree.root_hash(), empty_root_hash);
+
+        tree.update(&0.into(), 1.into());
+        let something_at_zero = tree.root_hash();
+        assert!(something_at_zero != empty_root_hash);
+        tree.update(&1.into(), 7.into());
+        let something_at_one_and_zero = tree.root_hash();
+        assert!(something_at_one_and_zero != empty_root_hash);
+        assert!(something_at_one_and_zero != something_at_zero);
+
+        tree.delete(&0.into());
+        let something_at_one = tree.root_hash();
+        assert!(something_at_one != something_at_one_and_zero);
+        assert!(something_at_one != something_at_zero);
+        assert!(something_at_one != empty_root_hash);
+
+        tree.delete(&1.into());
+        assert_eq!(tree.root_hash(), empty_root_hash);
     }
 
     #[test]
