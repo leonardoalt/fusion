@@ -1,0 +1,8 @@
+[package]
+name = "poseidon"
+version = "0.1.0"
+edition = "2018"
+
+
+[dependencies]
+zokrates_field = { git = "https://github.com/Zokrates/ZoKrates", tag = "0.8.3" }
