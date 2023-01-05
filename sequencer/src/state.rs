@@ -25,7 +25,7 @@ pub struct State {
 
 impl State {
     pub fn root(&self) -> U256 {
-        self.inner.root()
+        self.inner.root_hash()
     }
 
     pub fn get(&self, key: &U256) -> Account {

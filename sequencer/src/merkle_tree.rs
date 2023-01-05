@@ -18,7 +18,9 @@ use std::collections::BTreeMap;
 /// The leaves have height 255.
 #[derive(Default, Clone)]
 pub struct MerkleTree<H, T> {
-    keys: BTreeMap<U256, T>,
+    /// Mapping from leaf index to value.
+    leafs: BTreeMap<U256, T>,
+    /// Mapping from internal node identifier to its hash.
     branches: BTreeMap<BranchKey, BranchNode>,
     phantom: PhantomData<H>,
 }
@@ -78,14 +80,14 @@ impl BranchKey {
 struct BranchNode(U256);
 
 impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
-    pub fn root(&self) -> U256 {
+    pub fn root_hash(&self) -> U256 {
         let left = BranchKey::new(0, Bitmap::<256>::default());
         let right = left.sibling();
         self.merge_nodes(&left, &right)
     }
 
     pub fn get(&self, key: &U256) -> Option<&T> {
-        self.keys.get(key)
+        self.leafs.get(key)
     }
 
     pub fn proof(&self, key: &U256) -> Vec<U256> {
@@ -104,7 +106,7 @@ impl<H: Hasher + Default, T: Value + Clone + Default> MerkleTree<H, T> {
 
     pub fn update(&mut self, key: &U256, value: T) {
         // TODO remove entry from `self.keys` if `T == 0`.
-        self.keys.insert(*key, value.clone());
+        self.leafs.insert(*key, value.clone());
 
         let branch_key = BranchKey::for_leaf(key);
         self.branches
