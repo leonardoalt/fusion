@@ -3,18 +3,18 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Script.sol";
 
-import "src/Verifier.sol";
+import "src/Trollup.sol";
 
 contract VerifierScript is Script {
     function setUp() public {}
 
-    function run() public returns (Verifier) {
+    function run() public returns (Trollup) {
         vm.startBroadcast();
 
-        Verifier verifier = new Verifier();
+        Trollup t = new Trollup();
 
         vm.stopBroadcast();
 
-        return verifier;
+        return t;
     }
 }
