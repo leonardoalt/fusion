@@ -1,5 +1,5 @@
 [package]
-name = "troller"
+name = "trollup-signer"
 version = "0.1.0"
 edition = "2021"
 
@@ -10,5 +10,5 @@ anyhow = "1.0.66"
 clap = { version = "4.0.22", features = ["derive"] }
 ethers = { git = "https://github.com/gakonst/ethers-rs" }
 serde = "1.0.147"
-sequencer = { path = "../sequencer" }
+trollup-api = { path = "../trollup-api" }
 tokio = { version = "1.21.2", features = ["macros"] }

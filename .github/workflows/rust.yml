@@ -27,11 +27,11 @@ jobs:
       run: rustup default nightly
     - name: Install dependencies
       run: rustup component add clippy rustfmt
-    - name: Build sequencer
-      run: cd sequencer && cargo build --verbose
-    - name: Run sequencer tests
-      run: cd sequencer && cargo test --verbose
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
     - name: Lint
-      run: cd sequencer && cargo clippy --all --all-features -- -D warnings
+      run: cargo clippy --all --all-features -- -D warnings
     - name: Format
-      run: cd sequencer && cargo fmt --check --verbose
+      run: cargo fmt --check --verbose
