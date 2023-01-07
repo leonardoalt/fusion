@@ -54,7 +54,7 @@ def verify_merkle_tree(field root, field leaf, bool[DEPTH] directionSelector, fi
 	return digest == root;
 }
 
-def main(field preRoot, Tx tx, Account preAccount, private field postRoot, private bool[DEPTH] directionSelector, private field[DEPTH] prePath, private field[DEPTH] postPath) -> bool {
+def main(field preRoot, Tx tx, Account preAccount, private field postRoot, private bool[DEPTH] directionSelector, private field[DEPTH] prePath, private field[DEPTH] postPath) {
 	// Verify current state
 	assert(verify_merkle_tree(preRoot, hash_leaf(preAccount), directionSelector, prePath));
 
@@ -72,6 +72,4 @@ def main(field preRoot, Tx tx, Account preAccount, private field postRoot, priva
 
 	// Verify new state
 	assert(verify_merkle_tree(postRoot, hash_leaf(postAccount), directionSelector, postPath));
-
-	return true;
 }
