@@ -3,6 +3,8 @@ use crate::conversions::*;
 use crate::merkle_tree::ToBitmap;
 use crate::state::{Account, State};
 
+use trollup_l1::trollup;
+
 use bitmaps::Bitmap;
 
 use ethers::types::U256;
@@ -64,7 +66,11 @@ impl ToVecBool for Bitmap<256> {
 pub struct Prover;
 
 impl Prover {
-    pub fn prove(tx: &api::Tx, pre_state: &State, post_state: &State) -> Result<(), String> {
+    pub fn prove(
+        tx: &api::Tx,
+        pre_state: &State,
+        post_state: &State,
+    ) -> Result<(trollup::Proof, [U256; 8]), String> {
         let path = Path::new("../circuits/out");
         let file = File::open(path)
             .map_err(|why| format!("Could not open {}: {}", path.display(), why))?;
@@ -90,6 +96,7 @@ impl Prover {
             .map_err(|why| format!("Could not read {}: {}", pk_path.display(), why))?;
 
         let proof: Proof<Bn128Field, G16> = Ark::generate_proof(prog, witness, pk);
+        let ret = (proof.to_trollup_l1_proof(), proof.to_trollup_l1_input());
 
         let proof = serde_json::to_string_pretty(&TaggedProof::<Bn128Field, G16>::new(
             proof.proof,
@@ -98,7 +105,8 @@ impl Prover {
         .unwrap();
 
         println!("Proof:\n{proof}");
-        Ok(())
+
+        Ok(ret)
     }
 
     fn compute_witness<I: IntoIterator<Item = ir::Statement<Bn128Field>>>(
@@ -150,5 +158,48 @@ impl Prover {
         */
 
         Ok(witness)
+    }
+}
+
+trait ToTrollupL1 {
+    fn to_trollup_l1_proof(&self) -> trollup::Proof;
+    fn to_trollup_l1_input(&self) -> [U256; 8usize];
+}
+
+impl ToTrollupL1 for Proof<Bn128Field, G16> {
+    fn to_trollup_l1_proof(&self) -> trollup::Proof {
+        trollup::Proof {
+            a: trollup::G1Point {
+                x: U256::from_str_radix(&self.proof.a.0[2..], 16).unwrap(),
+                y: U256::from_str_radix(&self.proof.a.1[2..], 16).unwrap(),
+            },
+            b: match &self.proof.b {
+                G2Affine::Fq2(f) => trollup::G2Point {
+                    x: [
+                        U256::from_str_radix(&f.0 .0[2..], 16).unwrap(),
+                        U256::from_str_radix(&f.0 .1[2..], 16).unwrap(),
+                    ],
+                    y: [
+                        U256::from_str_radix(&f.1 .0[2..], 16).unwrap(),
+                        U256::from_str_radix(&f.1 .1[2..], 16).unwrap(),
+                    ],
+                },
+                _ => panic!(),
+            },
+            c: trollup::G1Point {
+                x: U256::from_str_radix(&self.proof.c.0[2..], 16).unwrap(),
+                y: U256::from_str_radix(&self.proof.c.1[2..], 16).unwrap(),
+            },
+        }
+    }
+
+    fn to_trollup_l1_input(&self) -> [U256; 8usize] {
+        assert_eq!(self.inputs.len(), 8);
+        self.inputs
+            .iter()
+            .map(|x| U256::from_str_radix(&x[2..], 16).unwrap())
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap()
     }
 }

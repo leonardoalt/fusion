@@ -5,7 +5,12 @@ use std::{
     time::Duration,
 };
 
-use ethers::{types, utils::keccak256};
+use ethers::{
+    providers::{Http, Provider},
+    signers::LocalWallet,
+    types,
+    utils::keccak256,
+};
 use hyper::Method;
 use jsonrpsee::{
     server::{AllowHosts, ServerBuilder, ServerHandle},
@@ -14,8 +19,11 @@ use jsonrpsee::{
 use tokio::{task, time::interval};
 use tower_http::cors::{Any, CorsLayer};
 
+use trollup_l1::trollup;
+
 use sequencer::api::*;
 use sequencer::conversions::*;
+use sequencer::node::*;
 use sequencer::prover::*;
 use sequencer::state::{Account, State};
 
@@ -24,39 +32,25 @@ type Db = Arc<Mutex<Vec<SignedTx>>>;
 const DB_PATH: &str = "./db";
 const SOCKET_ADDRESS: &str = "127.0.0.1:38171";
 
-/*
-impl From<SignedTx> for verifier::Tx {
-    fn from(tx: SignedTx) -> Self {
-        Self {
-            sender: tx.tx.sender,
-            to: tx.tx.to,
-            amt: tx.tx.value,
-            nonce: tx.tx.nonce,
-            signature: tx.signature.parse().unwrap(),
-        }
-    }
-}
-*/
-
 async fn run_node() -> anyhow::Result<()> {
     let db_path = Path::new(DB_PATH);
     let db = init_db(db_path);
     let rpc = init_rpc(db.clone()).await.unwrap();
 
-    let _private_key = std::env::var("ETH_PRIVATE_KEY")?;
-    let _http_endpoint = std::env::var("ETH_RPC_URL")?;
+    let private_key = std::env::var("ETH_PRIVATE_KEY")?;
+    let http_endpoint = std::env::var("ETH_RPC_URL")?;
 
     task::spawn(async move {
         let mut state = State::default();
 
-        //let l1_contract = init_l1(private_key, http_endpoint).await.unwrap();
+        let l1_contract = init_l1(private_key, http_endpoint).await.unwrap();
         let mut interval = interval(Duration::from_millis(1000 * 5));
 
         loop {
             interval.tick().await;
 
-            //let current_root = l1_contract.root().call().await.unwrap();
-            //println!("Current root is {}", types::H256::from(current_root));
+            let current_root = l1_contract.root().call().await.unwrap();
+            println!("Current root is {current_root}");
 
             let txs: Vec<_> = db
                 .lock()
@@ -65,26 +59,24 @@ async fn run_node() -> anyhow::Result<()> {
                 .filter(|tx| validate_tx(&state, tx).is_ok())
                 .collect();
 
-            let pre_state = state.clone();
-            state = txs.iter().fold(state, apply_tx);
-            println!("Computed L2 state root is {:?}", state.root());
-
+            assert!(txs.len() <= 1);
             if !txs.is_empty() {
-                if let Err(e) = Prover::prove(&txs[0].tx, &pre_state, &state) {
-                    println!("Could not generate proof: {e}");
+                let pre_state = state.clone();
+                state = txs.iter().fold(state, apply_tx);
+                println!("Computed L2 state root is {:?}", state.root());
+
+                match Prover::prove(&txs[0].tx, &pre_state, &state) {
+                    Err(e) => println!("Could not generate proof: {e}"),
+                    Ok((proof, input)) => {
+                        l1_contract
+                            .submit_block(proof, input.to_vec())
+                            .gas(1000000)
+                            .send()
+                            .await
+                            .unwrap();
+                    }
                 };
             }
-
-            /*
-            l1_contract
-                .submit_block(
-                    txs.into_iter().map(|tx| tx.into()).collect(),
-                    state.root(),
-                )
-                .send()
-                .await
-                .unwrap();
-            */
         }
     });
 
@@ -186,21 +178,19 @@ fn init_db(_path: &Path) -> Db {
     Arc::new(Mutex::new(vec![]))
 }
 
-/*
 async fn init_l1(
     private_key: String,
     http_endpoint: String,
 ) -> anyhow::Result<
-    verifier::Verifier<ethers::middleware::SignerMiddleware<Provider<Http>, LocalWallet>>,
+    trollup::Trollup<ethers::middleware::SignerMiddleware<Provider<Http>, LocalWallet>>,
 > {
     let node = Arc::new(Node::new_with_private_key(private_key, http_endpoint).await?);
 
     let l1_address: types::Address = std::env::var("TROLLUP_L1_CONTRACT")?.parse()?;
-    let l1_contract = verifier::Verifier::new(l1_address, node.http_client.clone());
+    let l1_contract = trollup::Trollup::new(l1_address, node.http_client.clone());
 
     Ok(l1_contract)
 }
-*/
 
 async fn init_rpc(db: Db) -> anyhow::Result<ServerHandle> {
     let cors = CorsLayer::new()
