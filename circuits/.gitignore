@@ -3,3 +3,5 @@ out
 out.r1cs
 out.wtns
 witness
+*.key
+*.sol
