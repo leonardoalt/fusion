@@ -1,10 +1,10 @@
-use ethers_core::types::*;
+use ethers_core::types::U256;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Tx {
-    pub sender: Address,
-    pub to: Address,
+    pub sender: U256,
+    pub to: U256,
     pub nonce: U256,
     pub value: U256,
 }

@@ -1,5 +1,5 @@
 [package]
-name = "trollup-signer"
+name = "trollup-wallet"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,8 +7,11 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.66"
+babyjubjub-rs = "0.0.10"
 clap = { version = "4.0.22", features = ["derive"] }
 ethers = { git = "https://github.com/gakonst/ethers-rs" }
-serde = "1.0.147"
-trollup-api = { path = "../trollup-api" }
+num-bigint = "0.4.3"
 tokio = { version = "1.21.2", features = ["macros"] }
+trollup-api = { path = "../trollup-api" }
+trollup-signature = { path = "../trollup-signature" }
+trollup-types = { path = "../trollup-types" }

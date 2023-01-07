@@ -2,20 +2,28 @@ use std::{sync::Arc, time::Duration};
 
 use clap::{Parser, Subcommand};
 use ethers::{
-    core::k256::SecretKey,
     providers::{Http, Provider},
-    signers::{LocalWallet, Signer},
-    types,
-    utils::keccak256,
+    types::{U256, U512},
 };
+use num_bigint::BigInt;
+
 use trollup_api::*;
+use trollup_types::{PrivateKey, ToU256};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let opts = Opts::parse();
     match opts.sub {
+        Subcommands::New => {
+            new_private_key();
+            Ok(())
+        }
+        Subcommands::Public(public_args) => {
+            new_public_key(public_args.private_key);
+            Ok(())
+        }
         Subcommands::Sign(sig_args) => {
-            let signature = sign(sig_args).await?;
+            let signature = sign(sig_args).unwrap();
             println!("{signature}");
             Ok(())
         }
@@ -23,15 +31,19 @@ async fn main() -> anyhow::Result<()> {
     }
 }
 
-async fn sign(sig_args: CLITx) -> anyhow::Result<types::Signature> {
-    let wallet: LocalWallet = SecretKey::from_be_bytes(sig_args.private_key.as_bytes())
-        .expect("invalid private key")
-        .into();
+fn new_private_key() {
+    let key = babyjubjub_rs::new_key();
+    println!("{}", key.scalar_key());
+}
 
-    let hash = hash_tx(&sig_args.into()).as_fixed_bytes().to_vec();
-    let signature = wallet.sign_message(hash.clone()).await?;
+fn new_public_key(sk: String) {
+    let key: PrivateKey = sk.into();
+    let pk = U256::from_big_endian(key.0.public().compress().as_slice());
+    println!("{pk}");
+}
 
-    Ok(signature)
+fn sign(sig_args: CLITx) -> anyhow::Result<U512> {
+    trollup_signature::sign(&sig_args.clone().into(), sig_args.private_key.unwrap())
 }
 
 async fn send(send_args: CLITx) -> anyhow::Result<()> {
@@ -40,11 +52,11 @@ async fn send(send_args: CLITx) -> anyhow::Result<()> {
     } else {
         SignedTx {
             tx: send_args.clone().into(),
-            signature: sign(send_args).await?.to_string(),
+            signature: sign(send_args).unwrap().to_string(),
         }
     };
 
-    verify_tx_signature(&signed)?;
+    trollup_signature::verify_tx_signature(&signed)?;
 
     let provider =
         Provider::<Http>::try_from(SERVER_ADDRESS)?.interval(Duration::from_millis(10u64));
@@ -57,10 +69,10 @@ async fn send(send_args: CLITx) -> anyhow::Result<()> {
 impl From<CLITx> for Tx {
     fn from(tx: CLITx) -> Self {
         Self {
-            sender: tx.sender,
-            to: tx.to,
-            nonce: tx.nonce,
-            value: tx.value,
+            sender: tx.sender.to_u256(),
+            to: tx.to.to_u256(),
+            nonce: tx.nonce.to_u256(),
+            value: tx.value.to_u256(),
         }
     }
 }
@@ -68,12 +80,7 @@ impl From<CLITx> for Tx {
 impl From<CLITx> for SignedTx {
     fn from(tx: CLITx) -> Self {
         Self {
-            tx: Tx {
-                sender: tx.sender,
-                to: tx.to,
-                nonce: tx.nonce,
-                value: tx.value,
-            },
+            tx: tx.clone().into(),
             signature: tx.signature.unwrap(),
         }
     }
@@ -90,10 +97,25 @@ struct Opts {
 
 #[derive(Debug, Subcommand)]
 pub enum Subcommands {
+    #[clap(about = "Generate a new random private key.")]
+    New,
+    #[clap(about = "Generate a public key from a private key.")]
+    Public(CLIPublic),
     #[clap(about = "Sign a trollup transaction.")]
     Sign(CLITx),
     #[clap(about = "Send trollup transaction, optionally sign it before.")]
     Send(CLITx),
+}
+
+#[derive(Debug, Clone, Parser, Default)]
+pub struct CLIPublic {
+    #[clap(
+        long,
+        short = 'p',
+        value_name = "PRIVATE_KEY",
+        help = "The private key"
+    )]
+    pub private_key: String,
 }
 
 #[derive(Debug, Clone, Parser, Default)]
@@ -102,26 +124,23 @@ pub struct CLITx {
         long,
         short = 'p',
         value_name = "PRIVATE_KEY",
-        help = "The private key that signs the message",
-        default_value = "0x0000000000000000000000000000000000000000000000000000000000000000"
+        help = "The private key that signs the message"
     )]
-    pub private_key: ethers::types::H256,
+    pub private_key: Option<String>,
     #[clap(
         long,
         short = 'f',
         value_name = "SENDER_ADDRESS",
-        help = "The address of the sender address.",
-        default_value = "0x0000000000000000000000000000000000000000"
+        help = "The address of the sender address."
     )]
-    pub sender: ethers::types::Address,
+    pub sender: BigInt,
     #[clap(
         long,
         short = 't',
         value_name = "DEST_ADDRESS",
-        help = "The address of the destination address.",
-        default_value = "0x0000000000000000000000000000000000000000"
+        help = "The address of the destination address."
     )]
-    pub to: ethers::types::Address,
+    pub to: BigInt,
     #[clap(
         long,
         short = 'v',
@@ -129,7 +148,7 @@ pub struct CLITx {
         help = "The value of the transaction.",
         default_value = "0"
     )]
-    pub value: ethers::types::U256,
+    pub value: BigInt,
     #[clap(
         long,
         short = 'n',
@@ -137,7 +156,7 @@ pub struct CLITx {
         help = "The nonce of the transaction.",
         default_value = "0"
     )]
-    pub nonce: ethers::types::U256,
+    pub nonce: BigInt,
     #[clap(
         long,
         short = 's',
@@ -145,30 +164,4 @@ pub struct CLITx {
         help = "The signed transaction."
     )]
     pub signature: Option<String>,
-}
-
-fn hash_tx(sig_args: &Tx) -> ethers::types::TxHash {
-    let mut value_bytes = vec![0; 32];
-    sig_args.value.to_big_endian(&mut value_bytes);
-
-    let mut nonce_bytes = vec![0; 32];
-    sig_args.nonce.to_big_endian(&mut nonce_bytes);
-
-    let msg = [
-        sig_args.sender.as_fixed_bytes().to_vec(),
-        sig_args.to.as_fixed_bytes().to_vec(),
-        value_bytes,
-        nonce_bytes,
-    ]
-    .concat();
-
-    types::TxHash::from(keccak256(msg))
-}
-
-fn verify_tx_signature(signed_tx: &SignedTx) -> anyhow::Result<()> {
-    let hash = hash_tx(&signed_tx.tx).as_fixed_bytes().to_vec();
-    let decoded = signed_tx.signature.parse::<types::Signature>()?;
-    decoded.verify(hash, signed_tx.tx.sender)?;
-
-    Ok(())
 }
