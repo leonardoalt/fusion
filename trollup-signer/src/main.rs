@@ -8,7 +8,7 @@ use ethers::{
     types,
     utils::keccak256,
 };
-use sequencer::api::*;
+use trollup_api::*;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -16,7 +16,7 @@ async fn main() -> anyhow::Result<()> {
     match opts.sub {
         Subcommands::Sign(sig_args) => {
             let signature = sign(sig_args).await?;
-            println!("{}", signature);
+            println!("{signature}");
             Ok(())
         }
         Subcommands::Send(send_args) => send(send_args).await,
@@ -49,8 +49,7 @@ async fn send(send_args: CLITx) -> anyhow::Result<()> {
     let provider =
         Provider::<Http>::try_from(SERVER_ADDRESS)?.interval(Duration::from_millis(10u64));
     let client = Arc::new(provider);
-    let tx_receipt = client.request(RPC_SUBMIT_TX, signed).await?;
-    println!("{:?}", tx_receipt);
+    client.request(RPC_SUBMIT_TX, signed).await?;
 
     Ok(())
 }

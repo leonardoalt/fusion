@@ -21,11 +21,11 @@ use tower_http::cors::{Any, CorsLayer};
 
 use trollup_l1::trollup;
 
-use sequencer::api::*;
-use sequencer::conversions::*;
-use sequencer::node::*;
-use sequencer::prover::*;
-use sequencer::state::{Account, State};
+use trollup_api::*;
+use trollup_sequencer::conversions::*;
+use trollup_sequencer::node::*;
+use trollup_sequencer::prover::*;
+use trollup_sequencer::state::{Account, State};
 
 type Db = Arc<Mutex<Vec<SignedTx>>>;
 

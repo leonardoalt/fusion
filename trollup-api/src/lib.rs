@@ -1,4 +1,4 @@
-use ethers::types::*;
+use ethers_core::types::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

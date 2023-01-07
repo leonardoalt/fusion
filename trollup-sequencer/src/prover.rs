@@ -1,8 +1,8 @@
-use crate::api;
 use crate::conversions::*;
 use crate::merkle_tree::ToBitmap;
 use crate::state::{Account, State};
 
+use trollup_api;
 use trollup_l1::trollup;
 
 use bitmaps::Bitmap;
@@ -26,7 +26,7 @@ use std::path::Path;
 #[derive(Serialize_tuple, Deserialize_tuple, Debug)]
 pub struct CircuitInput {
     pre_root: U256,
-    tx: api::Tx,
+    tx: trollup_api::Tx,
     pre_account: Account,
     post_root: U256,
     direction_selector: Vec<bool>,
@@ -35,7 +35,7 @@ pub struct CircuitInput {
 }
 
 impl CircuitInput {
-    pub fn new(tx: &api::Tx, pre_state: &State, post_state: &State) -> Self {
+    pub fn new(tx: &trollup_api::Tx, pre_state: &State, post_state: &State) -> Self {
         let addr: U256 = tx.sender.to_u256();
         Self {
             pre_root: pre_state.root(),
@@ -67,7 +67,7 @@ pub struct Prover;
 
 impl Prover {
     pub fn prove(
-        tx: &api::Tx,
+        tx: &trollup_api::Tx,
         pre_state: &State,
         post_state: &State,
     ) -> Result<(trollup::Proof, [U256; 8]), String> {
@@ -111,7 +111,7 @@ impl Prover {
 
     fn compute_witness<I: IntoIterator<Item = ir::Statement<Bn128Field>>>(
         prog: ir::ProgIterator<Bn128Field, I>,
-        tx: &api::Tx,
+        tx: &trollup_api::Tx,
         pre_state: &State,
         post_state: &State,
     ) -> Result<Witness<Bn128Field>, String> {
