@@ -359,6 +359,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "arrayref"
+version = "0.3.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4c527152e37cf757a3f78aae5a06fbeefdb07ccc535c980a3208ee3060dd544"
+
+[[package]]
 name = "arrayvec"
 version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -424,6 +430,24 @@ name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
+
+[[package]]
+name = "babyjubjub-rs"
+version = "0.0.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2f742656563ea50a992ad19d0f4d2eb5c1cd4f88d318eade61e604b349a152c3"
+dependencies = [
+ "arrayref",
+ "blake-hash",
+ "ff_ce 0.11.0",
+ "generic-array 0.14.6",
+ "lazy_static",
+ "num 0.4.0",
+ "num-bigint 0.4.3",
+ "num-traits 0.2.15",
+ "poseidon-rs",
+ "rand 0.8.5",
+]
 
 [[package]]
 name = "backtrace"
@@ -574,6 +598,17 @@ dependencies = [
  "radium 0.7.0",
  "tap",
  "wyz",
+]
+
+[[package]]
+name = "blake-hash"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "94d1988118c887f61418940e322d574e8a2dd67165f1f1556eaae22e4019c6af"
+dependencies = [
+ "block-buffer 0.9.0",
+ "digest 0.9.0",
+ "ppv-lite86",
 ]
 
 [[package]]
@@ -1248,7 +1283,7 @@ dependencies = [
 [[package]]
 name = "ethers"
 version = "1.0.2"
-source = "git+https://github.com/gakonst/ethers-rs#2aa7bc3b996fb64687645757b15bf2cc362265c8"
+source = "git+https://github.com/gakonst/ethers-rs#01d3e4310f2bca3bad1a0d1f3980c8386186cceb"
 dependencies = [
  "ethers-addressbook",
  "ethers-contract",
@@ -1262,7 +1297,7 @@ dependencies = [
 [[package]]
 name = "ethers-addressbook"
 version = "1.0.2"
-source = "git+https://github.com/gakonst/ethers-rs#2aa7bc3b996fb64687645757b15bf2cc362265c8"
+source = "git+https://github.com/gakonst/ethers-rs#01d3e4310f2bca3bad1a0d1f3980c8386186cceb"
 dependencies = [
  "ethers-core",
  "once_cell",
@@ -1273,7 +1308,7 @@ dependencies = [
 [[package]]
 name = "ethers-contract"
 version = "1.0.2"
-source = "git+https://github.com/gakonst/ethers-rs#2aa7bc3b996fb64687645757b15bf2cc362265c8"
+source = "git+https://github.com/gakonst/ethers-rs#01d3e4310f2bca3bad1a0d1f3980c8386186cceb"
 dependencies = [
  "ethers-contract-abigen",
  "ethers-contract-derive",
@@ -1291,7 +1326,7 @@ dependencies = [
 [[package]]
 name = "ethers-contract-abigen"
 version = "1.0.2"
-source = "git+https://github.com/gakonst/ethers-rs#2aa7bc3b996fb64687645757b15bf2cc362265c8"
+source = "git+https://github.com/gakonst/ethers-rs#01d3e4310f2bca3bad1a0d1f3980c8386186cceb"
 dependencies = [
  "Inflector",
  "cfg-if 1.0.0",
@@ -1315,7 +1350,7 @@ dependencies = [
 [[package]]
 name = "ethers-contract-derive"
 version = "1.0.2"
-source = "git+https://github.com/gakonst/ethers-rs#2aa7bc3b996fb64687645757b15bf2cc362265c8"
+source = "git+https://github.com/gakonst/ethers-rs#01d3e4310f2bca3bad1a0d1f3980c8386186cceb"
 dependencies = [
  "ethers-contract-abigen",
  "ethers-core",
@@ -1329,7 +1364,7 @@ dependencies = [
 [[package]]
 name = "ethers-core"
 version = "1.0.2"
-source = "git+https://github.com/gakonst/ethers-rs#2aa7bc3b996fb64687645757b15bf2cc362265c8"
+source = "git+https://github.com/gakonst/ethers-rs#01d3e4310f2bca3bad1a0d1f3980c8386186cceb"
 dependencies = [
  "arrayvec 0.7.2",
  "bytes",
@@ -1360,7 +1395,7 @@ dependencies = [
 [[package]]
 name = "ethers-etherscan"
 version = "1.0.2"
-source = "git+https://github.com/gakonst/ethers-rs#2aa7bc3b996fb64687645757b15bf2cc362265c8"
+source = "git+https://github.com/gakonst/ethers-rs#01d3e4310f2bca3bad1a0d1f3980c8386186cceb"
 dependencies = [
  "ethers-core",
  "getrandom",
@@ -1376,7 +1411,7 @@ dependencies = [
 [[package]]
 name = "ethers-middleware"
 version = "1.0.2"
-source = "git+https://github.com/gakonst/ethers-rs#2aa7bc3b996fb64687645757b15bf2cc362265c8"
+source = "git+https://github.com/gakonst/ethers-rs#01d3e4310f2bca3bad1a0d1f3980c8386186cceb"
 dependencies = [
  "async-trait",
  "auto_impl 0.5.0",
@@ -1401,7 +1436,7 @@ dependencies = [
 [[package]]
 name = "ethers-providers"
 version = "1.0.2"
-source = "git+https://github.com/gakonst/ethers-rs#2aa7bc3b996fb64687645757b15bf2cc362265c8"
+source = "git+https://github.com/gakonst/ethers-rs#01d3e4310f2bca3bad1a0d1f3980c8386186cceb"
 dependencies = [
  "async-trait",
  "auto_impl 1.0.1",
@@ -1436,7 +1471,7 @@ dependencies = [
 [[package]]
 name = "ethers-signers"
 version = "1.0.2"
-source = "git+https://github.com/gakonst/ethers-rs#2aa7bc3b996fb64687645757b15bf2cc362265c8"
+source = "git+https://github.com/gakonst/ethers-rs#01d3e4310f2bca3bad1a0d1f3980c8386186cceb"
 dependencies = [
  "async-trait",
  "coins-bip32",
@@ -1503,6 +1538,18 @@ name = "ff_ce"
 version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4592897f75fd1bd178e5ec12d9d7df3d1943464feda2cbce1e708a484e82c8f6"
+dependencies = [
+ "byteorder",
+ "ff_derive_ce",
+ "hex",
+ "rand 0.4.6",
+]
+
+[[package]]
+name = "ff_ce"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d3a682c12d0cc98a32ab7540401a5ea1ed21d11571eea11d5829cd721f85ff0"
 dependencies = [
  "byteorder",
  "ff_derive_ce",
@@ -2252,6 +2299,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "num"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "43db66d1170d347f9a065114077f7dccb00c1b9478c89384490a3425279a4606"
+dependencies = [
+ "num-bigint 0.4.3",
+ "num-complex",
+ "num-integer",
+ "num-iter",
+ "num-rational",
+ "num-traits 0.2.15",
+]
+
+[[package]]
 name = "num-bigint"
 version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2272,6 +2333,16 @@ dependencies = [
  "autocfg",
  "num-integer",
  "num-traits 0.2.15",
+ "rand 0.8.5",
+]
+
+[[package]]
+name = "num-complex"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7ae39348c8bc5fbd7f40c727a9925f03517afd2ab27d46702108b6a7e5414c19"
+dependencies = [
+ "num-traits 0.2.15",
 ]
 
 [[package]]
@@ -2291,6 +2362,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7d03e6c028c5dc5cac6e2dec0efda81fc887605bb3d884578bb6d6bf7514e252"
 dependencies = [
  "autocfg",
+ "num-integer",
+ "num-traits 0.2.15",
+]
+
+[[package]]
+name = "num-rational"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0638a1c9d0a3c0914158145bc76cff373a75a627e6ecbfb71cbe6f453a5a19b0"
+dependencies = [
+ "autocfg",
+ "num-bigint 0.4.3",
  "num-integer",
  "num-traits 0.2.15",
 ]
@@ -2409,7 +2492,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bfc00d65b1d29e0a067a967fcea83d8db261c149f76a557ba73f0304f01cdfde"
 dependencies = [
  "byteorder",
- "ff_ce",
+ "ff_ce 0.10.3",
  "rand 0.4.6",
 ]
 
@@ -2637,6 +2720,17 @@ version = "0.1.0"
 source = "git+https://github.com/leonardoalt/Poseidon_BN128?branch=main#c38bbb2783ba6a6d05a10343ce2bde2ef0ceb60c"
 dependencies = [
  "zokrates_field",
+]
+
+[[package]]
+name = "poseidon-rs"
+version = "0.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c76e4996e3d9572d8b5cd56f495dda3fb748fd4cd6bdca754270b8b66a9a2dd3"
+dependencies = [
+ "ff_ce 0.11.0",
+ "rand 0.4.6",
+ "serde_json",
 ]
 
 [[package]]
@@ -3761,6 +3855,8 @@ dependencies = [
  "tower-http",
  "trollup-api",
  "trollup-l1",
+ "trollup-signature",
+ "trollup-types",
  "zokrates_abi",
  "zokrates_ark",
  "zokrates_ast",
@@ -3772,15 +3868,40 @@ dependencies = [
 ]
 
 [[package]]
-name = "trollup-signer"
+name = "trollup-signature"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "babyjubjub-rs",
+ "ethers-core",
+ "poseidon",
+ "trollup-api",
+ "trollup-types",
+]
+
+[[package]]
+name = "trollup-types"
+version = "0.1.0"
+dependencies = [
+ "babyjubjub-rs",
+ "ethers-core",
+ "num-bigint 0.4.3",
+ "zokrates_field",
+]
+
+[[package]]
+name = "trollup-wallet"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "babyjubjub-rs",
  "clap",
  "ethers",
- "serde",
+ "num-bigint 0.4.3",
  "tokio",
  "trollup-api",
+ "trollup-signature",
+ "trollup-types",
 ]
 
 [[package]]
@@ -4263,7 +4384,7 @@ dependencies = [
  "csv",
  "lazy_static",
  "log",
- "num",
+ "num 0.1.42",
  "num-bigint 0.2.6",
  "reduce",
  "serde",
@@ -4326,7 +4447,7 @@ version = "0.1.1"
 source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.3#d9006cbab88f61a3d04ec6aa6215fd05feba7acf"
 dependencies = [
  "ark-bls12-377",
- "num",
+ "num 0.1.42",
  "num-bigint 0.2.6",
  "pairing_ce",
  "serde",

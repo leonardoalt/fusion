@@ -32,3 +32,5 @@ tower = "0.4.13"
 tower-http = { version = "0.3.4", features = ["cors"] }
 trollup-l1 = { path = "../l1-verifier/out/bindings" }
 trollup-api = { path = "../trollup-api" }
+trollup-signature = { path = "../trollup-signature" }
+trollup-types = { path = "../trollup-types" }

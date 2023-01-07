@@ -1,0 +1,14 @@
+[package]
+name = "trollup-signature"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.66"
+babyjubjub-rs = "0.0.10"
+ethers-core = { git = "https://github.com/gakonst/ethers-rs" }
+poseidon = { git = "https://github.com/leonardoalt/Poseidon_BN128", branch = "main" }
+trollup-api = { path = "../trollup-api" }
+trollup-types = { path = "../trollup-types" }

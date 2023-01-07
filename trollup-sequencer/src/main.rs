@@ -9,7 +9,6 @@ use ethers::{
     providers::{Http, Provider},
     signers::LocalWallet,
     types,
-    utils::keccak256,
 };
 use hyper::Method;
 use jsonrpsee::{
@@ -19,10 +18,9 @@ use jsonrpsee::{
 use tokio::{task, time::interval};
 use tower_http::cors::{Any, CorsLayer};
 
+use trollup_api::*;
 use trollup_l1::trollup;
 
-use trollup_api::*;
-use trollup_sequencer::conversions::*;
 use trollup_sequencer::node::*;
 use trollup_sequencer::prover::*;
 use trollup_sequencer::state::{Account, State};
@@ -113,7 +111,7 @@ async fn run_node() -> anyhow::Result<()> {
 }
 
 fn validate_tx(state: &State, tx: &SignedTx) -> anyhow::Result<()> {
-    let account = state.get(&tx.tx.sender.to_u256());
+    let account = state.get(&tx.tx.sender);
     if account.balance < tx.tx.value {
         Err(anyhow::anyhow!("Insufficient balance"))
     } else if account.nonce >= tx.tx.nonce {
@@ -124,8 +122,8 @@ fn validate_tx(state: &State, tx: &SignedTx) -> anyhow::Result<()> {
 }
 
 fn apply_tx(mut state: State, tx: &SignedTx) -> State {
-    let key_sender = tx.tx.sender.to_u256();
-    let key_to = tx.tx.to.to_u256();
+    let key_sender = tx.tx.sender;
+    let key_to = tx.tx.to;
 
     let account_sender = state.get(&key_sender);
     let account_to = state.get(&key_to);
@@ -143,30 +141,8 @@ fn apply_tx(mut state: State, tx: &SignedTx) -> State {
     state
 }
 
-fn hash_tx(sig_args: &Tx) -> ethers::types::TxHash {
-    let mut value_bytes = vec![0; 32];
-    sig_args.value.to_big_endian(&mut value_bytes);
-
-    let mut nonce_bytes = vec![0; 32];
-    sig_args.nonce.to_big_endian(&mut nonce_bytes);
-
-    let msg = [
-        sig_args.sender.as_fixed_bytes().to_vec(),
-        sig_args.to.as_fixed_bytes().to_vec(),
-        value_bytes,
-        nonce_bytes,
-    ]
-    .concat();
-
-    types::TxHash::from(keccak256(msg))
-}
-
 fn verify_tx_signature(signed_tx: &SignedTx) -> anyhow::Result<()> {
-    let hash = hash_tx(&signed_tx.tx).as_fixed_bytes().to_vec();
-    let decoded = signed_tx.signature.parse::<types::Signature>()?;
-    decoded.verify(hash, signed_tx.tx.sender)?;
-
-    Ok(())
+    trollup_signature::verify_tx_signature(signed_tx)
 }
 
 #[tokio::main]

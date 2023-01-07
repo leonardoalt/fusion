@@ -1,4 +1,3 @@
-use crate::conversions::*;
 use crate::merkle_tree::ToBitmap;
 use crate::state::{Account, State};
 
@@ -36,15 +35,14 @@ pub struct CircuitInput {
 
 impl CircuitInput {
     pub fn new(tx: &trollup_api::Tx, pre_state: &State, post_state: &State) -> Self {
-        let addr: U256 = tx.sender.to_u256();
         Self {
             pre_root: pre_state.root(),
             tx: tx.clone(),
-            pre_account: pre_state.get(&addr),
+            pre_account: pre_state.get(&tx.sender),
             post_root: post_state.root(),
-            direction_selector: addr.to_bitmap().to_vec_bool(),
-            pre_path: pre_state.proof(&addr),
-            post_path: post_state.proof(&addr),
+            direction_selector: tx.sender.to_bitmap().to_vec_bool(),
+            pre_path: pre_state.proof(&tx.sender),
+            post_path: post_state.proof(&tx.sender),
         }
     }
 }
