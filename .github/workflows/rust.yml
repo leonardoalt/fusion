@@ -26,7 +26,7 @@ jobs:
     - name: Set up nightly
       run: rustup default nightly
     - name: Install dependencies
-      run: rustup component add clippy
+      run: rustup component add clippy rustfmt
     - name: Build sequencer
       run: cd sequencer && cargo build --verbose
     - name: Run sequencer tests
