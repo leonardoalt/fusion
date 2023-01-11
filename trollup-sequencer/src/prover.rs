@@ -96,13 +96,14 @@ impl Prover {
         let proof: Proof<Bn128Field, G16> = Ark::generate_proof(prog, witness, pk);
         let ret = (proof.to_trollup_l1_proof(), proof.to_trollup_l1_input());
 
+        /*
         let proof = serde_json::to_string_pretty(&TaggedProof::<Bn128Field, G16>::new(
             proof.proof,
             proof.inputs,
         ))
         .unwrap();
-
         println!("Proof:\n{proof}");
+        */
 
         Ok(ret)
     }

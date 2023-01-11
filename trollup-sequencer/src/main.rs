@@ -112,7 +112,9 @@ async fn run_node() -> anyhow::Result<()> {
 
 fn validate_tx(state: &State, tx: &SignedTx) -> anyhow::Result<()> {
     let account = state.get(&tx.tx.sender);
-    if account.balance < tx.tx.value {
+    if tx.tx.sender == tx.tx.to {
+        Err(anyhow::anyhow!("Tx to self."))
+    } else if account.balance < tx.tx.value {
         Err(anyhow::anyhow!("Insufficient balance"))
     } else if account.nonce >= tx.tx.nonce {
         Err(anyhow::anyhow!("Nonce too low"))
