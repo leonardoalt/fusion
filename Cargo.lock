@@ -434,22 +434,6 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 [[package]]
 name = "babyjubjub-rs"
 version = "0.0.10"
-dependencies = [
- "arrayref",
- "blake-hash",
- "ff_ce 0.11.0",
- "generic-array 0.14.6",
- "lazy_static",
- "num 0.4.0",
- "num-bigint 0.4.3",
- "num-traits 0.2.15",
- "poseidon-rs",
- "rand 0.8.5",
-]
-
-[[package]]
-name = "babyjubjub-rs"
-version = "0.0.10"
 source = "git+https://github.com/leonardoalt/babyjubjub-rs#ed5e55707b00e6926ab5fb54e75914c5cb6a514e"
 dependencies = [
  "arrayref",
@@ -3854,7 +3838,7 @@ name = "trollup-sequencer"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "babyjubjub-rs 0.0.10",
+ "babyjubjub-rs",
  "bitmaps",
  "clap",
  "ethers",
@@ -3888,7 +3872,7 @@ name = "trollup-signature"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "babyjubjub-rs 0.0.10 (git+https://github.com/leonardoalt/babyjubjub-rs)",
+ "babyjubjub-rs",
  "ethers-core",
  "poseidon",
  "trollup-api",
@@ -3899,7 +3883,7 @@ dependencies = [
 name = "trollup-types"
 version = "0.1.0"
 dependencies = [
- "babyjubjub-rs 0.0.10 (git+https://github.com/leonardoalt/babyjubjub-rs)",
+ "babyjubjub-rs",
  "ethers-core",
  "ff_ce 0.11.0",
  "num-bigint 0.4.3",
@@ -3912,7 +3896,7 @@ name = "trollup-wallet"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "babyjubjub-rs 0.0.10 (git+https://github.com/leonardoalt/babyjubjub-rs)",
+ "babyjubjub-rs",
  "clap",
  "ethers",
  "num-bigint 0.4.3",
