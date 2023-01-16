@@ -6,7 +6,7 @@ contract Trollup is Verifier {
     uint256 public root;
 
     function submitBlock(Proof memory proof, uint256[] memory input) external {
-        require(input.length == 14);
+        require(input.length == 17);
 
         // The proof's pre-state's root must be the current root in this contract.
         require(root == input[0]);
@@ -15,6 +15,6 @@ contract Trollup is Verifier {
         require(verify(input, proof) == 0);
 
         // Update the canonical root with the proof's post-state's root.
-        root = input[5];
+        root = input[1];
     }
 }

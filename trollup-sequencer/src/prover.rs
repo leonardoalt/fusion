@@ -29,11 +29,11 @@ use std::path::Path;
 pub struct CircuitInput {
     pre_root: U256,
     tx: CircuitTx,
-    pre_account: Account,
+    pre_accounts: Vec<Account>,
     post_root: U256,
-    direction_selector: Vec<bool>,
-    pre_path: Vec<U256>,
-    post_path: Vec<U256>,
+    direction_selector: Vec<Vec<bool>>,
+    pre_path: Vec<Vec<U256>>,
+    post_path: Vec<Vec<U256>>,
 }
 
 impl CircuitInput {
@@ -41,11 +41,14 @@ impl CircuitInput {
         Self {
             pre_root: pre_state.root(),
             tx: tx.clone(),
-            pre_account: pre_state.get(&tx.sender),
+            pre_accounts: vec![pre_state.get(&tx.sender), pre_state.get(&tx.to)],
             post_root: post_state.root(),
-            direction_selector: tx.sender.to_bitmap().to_vec_bool(),
-            pre_path: pre_state.proof(&tx.sender),
-            post_path: post_state.proof(&tx.sender),
+            direction_selector: vec![
+                tx.sender.to_bitmap().to_vec_bool(),
+                tx.to.to_bitmap().to_vec_bool(),
+            ],
+            pre_path: vec![pre_state.proof(&tx.sender), pre_state.proof(&tx.to)],
+            post_path: vec![post_state.proof(&tx.sender), post_state.proof(&tx.to)],
         }
     }
 }
@@ -119,7 +122,7 @@ impl Prover {
         tx: &trollup_api::SignedTx,
         pre_state: &State,
         post_state: &State,
-    ) -> Result<(trollup::Proof, [U256; 14]), String> {
+    ) -> Result<(trollup::Proof, [U256; 17]), String> {
         let path = Path::new("../circuits/out");
         let file = File::open(path)
             .map_err(|why| format!("Could not open {}: {}", path.display(), why))?;
@@ -213,7 +216,7 @@ impl Prover {
 
 trait ToTrollupL1 {
     fn to_trollup_l1_proof(&self) -> trollup::Proof;
-    fn to_trollup_l1_input(&self) -> [U256; 14usize];
+    fn to_trollup_l1_input(&self) -> [U256; 17usize];
 }
 
 impl ToTrollupL1 for Proof<Bn128Field, G16> {
@@ -243,8 +246,8 @@ impl ToTrollupL1 for Proof<Bn128Field, G16> {
         }
     }
 
-    fn to_trollup_l1_input(&self) -> [U256; 14usize] {
-        assert_eq!(self.inputs.len(), 14);
+    fn to_trollup_l1_input(&self) -> [U256; 17usize] {
+        assert_eq!(self.inputs.len(), 17);
         self.inputs
             .iter()
             .map(|x| U256::from_str_radix(&x[2..], 16).unwrap())

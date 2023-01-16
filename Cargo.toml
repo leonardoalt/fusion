@@ -1,5 +1,4 @@
 [workspace]
-
 members = [
 	"trollup-api",
 	"trollup-sequencer",

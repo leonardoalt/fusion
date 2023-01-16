@@ -5,6 +5,10 @@ struct Point {
 	field y;
 }
 
+/// R: Curve point
+/// S: Field element. Signature to be verified.
+/// A: Curve point. Public part of the key used to create S.
+/// M: Message hashed with Poseidon
 struct Signature {
 	Point r;
 	field s;
