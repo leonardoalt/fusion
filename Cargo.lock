@@ -3912,7 +3912,7 @@ name = "trollup-wallet"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "babyjubjub-rs 0.0.10",
+ "babyjubjub-rs 0.0.10 (git+https://github.com/leonardoalt/babyjubjub-rs)",
  "clap",
  "ethers",
  "num-bigint 0.4.3",
