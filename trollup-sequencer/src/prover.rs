@@ -3,11 +3,14 @@ use crate::state::{Account, State};
 
 use trollup_api;
 use trollup_l1::trollup;
+use trollup_signature::hash_tx;
+use trollup_types::{FromBabyJubjubPoint, Point, ToBabyJubjubPoint, ToBabyJubjubSignature, ToU256};
 
 use bitmaps::Bitmap;
 
 use ethers::types::U256;
 
+use serde::{Deserialize, Serialize};
 use serde_json::from_reader;
 use serde_tuple::*;
 
@@ -25,7 +28,7 @@ use std::path::Path;
 #[derive(Serialize_tuple, Deserialize_tuple, Debug)]
 pub struct CircuitInput {
     pre_root: U256,
-    tx: trollup_api::Tx,
+    tx: CircuitTx,
     pre_account: Account,
     post_root: U256,
     direction_selector: Vec<bool>,
@@ -34,7 +37,7 @@ pub struct CircuitInput {
 }
 
 impl CircuitInput {
-    pub fn new(tx: &trollup_api::Tx, pre_state: &State, post_state: &State) -> Self {
+    pub fn new(tx: CircuitTx, pre_state: &State, post_state: &State) -> Self {
         Self {
             pre_root: pre_state.root(),
             tx: tx.clone(),
@@ -61,14 +64,62 @@ impl ToVecBool for Bitmap<256> {
     }
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CircuitTx {
+    sender: U256,
+    to: U256,
+    nonce: U256,
+    value: U256,
+    sig: CircuitTxSignature,
+}
+
+trait ToCircuitTx {
+    fn to_circuit_tx(&self) -> CircuitTx;
+}
+
+impl ToCircuitTx for trollup_api::SignedTx {
+    fn to_circuit_tx(&self) -> CircuitTx {
+        CircuitTx {
+            sender: self.tx.sender,
+            to: self.tx.to,
+            nonce: self.tx.nonce,
+            value: self.tx.value,
+            sig: self.clone().into(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct CircuitTxSignature {
+    r: Point,
+    s: U256,
+    a: Point,
+    m: U256,
+}
+
+impl From<trollup_api::SignedTx> for CircuitTxSignature {
+    fn from(tx: trollup_api::SignedTx) -> CircuitTxSignature {
+        let pk = tx.tx.sender.to_babyjubjub_point();
+        let sig = tx.signature.to_babyjubjub_signature();
+        let msg = hash_tx(&tx.tx);
+
+        CircuitTxSignature {
+            r: Point::from_babyjubjub_point(&sig.r_b8),
+            s: sig.s.to_u256(),
+            a: Point::from_babyjubjub_point(&pk),
+            m: msg,
+        }
+    }
+}
+
 pub struct Prover;
 
 impl Prover {
     pub fn prove(
-        tx: &trollup_api::Tx,
+        tx: &trollup_api::SignedTx,
         pre_state: &State,
         post_state: &State,
-    ) -> Result<(trollup::Proof, [U256; 8]), String> {
+    ) -> Result<(trollup::Proof, [U256; 14]), String> {
         let path = Path::new("../circuits/out");
         let file = File::open(path)
             .map_err(|why| format!("Could not open {}: {}", path.display(), why))?;
@@ -110,7 +161,7 @@ impl Prover {
 
     fn compute_witness<I: IntoIterator<Item = ir::Statement<Bn128Field>>>(
         prog: ir::ProgIterator<Bn128Field, I>,
-        tx: &trollup_api::Tx,
+        tx: &trollup_api::SignedTx,
         pre_state: &State,
         post_state: &State,
     ) -> Result<Witness<Bn128Field>, String> {
@@ -125,7 +176,7 @@ impl Prover {
             abi.signature()
         };
 
-        let inputs = CircuitInput::new(tx, pre_state, post_state);
+        let inputs = CircuitInput::new(tx.to_circuit_tx(), pre_state, post_state);
         //println!("\n\n{}\n\n", serde_json::to_string(&inputs).unwrap());
 
         let arguments = parse_strict(
@@ -145,8 +196,8 @@ impl Prover {
             .execute_with_log_stream(prog, &encoded, &mut std::io::stdout())
             .map_err(|e| format!("Execution failed: {e}"))?;
 
-        /*
         // Uncomment to see the witness verification result values
+        /*
         use zokrates_abi::Decode;
 
         let results_json_value: serde_json::Value =
@@ -162,7 +213,7 @@ impl Prover {
 
 trait ToTrollupL1 {
     fn to_trollup_l1_proof(&self) -> trollup::Proof;
-    fn to_trollup_l1_input(&self) -> [U256; 8usize];
+    fn to_trollup_l1_input(&self) -> [U256; 14usize];
 }
 
 impl ToTrollupL1 for Proof<Bn128Field, G16> {
@@ -192,8 +243,8 @@ impl ToTrollupL1 for Proof<Bn128Field, G16> {
         }
     }
 
-    fn to_trollup_l1_input(&self) -> [U256; 8usize] {
-        assert_eq!(self.inputs.len(), 8);
+    fn to_trollup_l1_input(&self) -> [U256; 14usize] {
+        assert_eq!(self.inputs.len(), 14);
         self.inputs
             .iter()
             .map(|x| U256::from_str_radix(&x[2..], 16).unwrap())

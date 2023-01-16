@@ -63,7 +63,7 @@ async fn run_node() -> anyhow::Result<()> {
                 state = txs.iter().fold(state, apply_tx);
                 println!("Computed L2 state root is {:?}", state.root());
 
-                match Prover::prove(&txs[0].tx, &pre_state, &state) {
+                match Prover::prove(&txs[0], &pre_state, &state) {
                     Err(e) => println!("Could not generate proof: {e}"),
                     Ok((proof, input)) => {
                         l1_contract
