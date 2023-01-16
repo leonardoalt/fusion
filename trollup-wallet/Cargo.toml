@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.66"
-babyjubjub-rs = "0.0.10"
+babyjubjub-rs = { git = "https://github.com/leonardoalt/babyjubjub-rs" }
 clap = { version = "4.0.22", features = ["derive"] }
 ethers = { git = "https://github.com/gakonst/ethers-rs" }
 num-bigint = "0.4.3"

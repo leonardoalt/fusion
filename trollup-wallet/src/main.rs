@@ -28,6 +28,10 @@ async fn main() -> anyhow::Result<()> {
             Ok(())
         }
         Subcommands::Send(send_args) => send(send_args).await,
+        Subcommands::Verify(args) => {
+            verify(args);
+            Ok(())
+        }
     }
 }
 
@@ -64,6 +68,10 @@ async fn send(send_args: CLITx) -> anyhow::Result<()> {
     client.request(RPC_SUBMIT_TX, signed).await?;
 
     Ok(())
+}
+
+fn verify(args: CLITx) {
+    trollup_signature::verify_tx_signature(&args.into()).unwrap();
 }
 
 impl From<CLITx> for Tx {
@@ -105,6 +113,8 @@ pub enum Subcommands {
     Sign(CLITx),
     #[clap(about = "Send trollup transaction, optionally sign it before.")]
     Send(CLITx),
+    #[clap(about = "Verify transaction signature.")]
+    Verify(CLITx),
 }
 
 #[derive(Debug, Clone, Parser, Default)]
