@@ -3,6 +3,7 @@ use num_bigint::{
     BigInt,
     Sign::{NoSign, Plus},
 };
+use serde::{Deserialize, Serialize};
 use zokrates_field::{Bn128Field, Field};
 
 pub trait ToU256 {
@@ -64,6 +65,25 @@ impl ToBabyJubjubSignature for U512 {
         let mut bytes = vec![0; 64];
         self.to_little_endian(&mut bytes);
         babyjubjub_rs::decompress_signature(bytes.as_slice().try_into().unwrap()).unwrap()
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Point {
+    x: U256,
+    y: U256,
+}
+
+pub trait FromBabyJubjubPoint {
+    fn from_babyjubjub_point(point: &babyjubjub_rs::Point) -> Self;
+}
+
+impl FromBabyJubjubPoint for Point {
+    fn from_babyjubjub_point(point: &babyjubjub_rs::Point) -> Self {
+        Self {
+            x: U256::from_str_radix(&ff::to_hex(&point.x), 16).unwrap(),
+            y: U256::from_str_radix(&ff::to_hex(&point.y), 16).unwrap(),
+        }
     }
 }
 

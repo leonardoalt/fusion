@@ -6,7 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-babyjubjub-rs = "0.0.10"
+babyjubjub-rs = { git = "https://github.com/leonardoalt/babyjubjub-rs" }
 ethers-core = { git = "https://github.com/gakonst/ethers-rs" }
+ff = {package="ff_ce" , version= "0.11", features = ["derive"]}
 num-bigint = "0.4.3"
 zokrates_field = { git = "https://github.com/ZoKrates/ZoKrates", tag = "0.8.3" }
+serde = "1.0.152"
