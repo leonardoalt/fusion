@@ -1,19 +1,6 @@
 import "hashes/poseidon/poseidon" as hash;
 
-const u32 DEPTH = 256;
-
-struct Tx {
-	field sender;
-	field to;
-	field nonce;
-	field value;
-}
-
-struct Account {
-	field id;
-	field balance;
-	field nonce;
-}
+from "./types" import DEPTH, Tx, Account;
 
 def select(bool condition, field left, field right) -> (field, field) {
 	return (condition ? right : left, condition ? left : right);
@@ -54,7 +41,7 @@ def verify_merkle_tree(field root, field leaf, bool[DEPTH] directionSelector, fi
 	return digest == root;
 }
 
-def main(field preRoot, Tx tx, Account preAccount, private field postRoot, private bool[DEPTH] directionSelector, private field[DEPTH] prePath, private field[DEPTH] postPath) {
+def main(field preRoot, Tx tx, Account preAccount, field postRoot, bool[DEPTH] directionSelector, field[DEPTH] prePath, field[DEPTH] postPath) -> bool {
 	// Verify current state
 	assert(verify_merkle_tree(preRoot, hash_leaf(preAccount), directionSelector, prePath));
 
@@ -72,4 +59,6 @@ def main(field preRoot, Tx tx, Account preAccount, private field postRoot, priva
 
 	// Verify new state
 	assert(verify_merkle_tree(postRoot, hash_leaf(postAccount), directionSelector, postPath));
+
+	return true;
 }

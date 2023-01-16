@@ -1,5 +1,5 @@
 all:
-	zokrates compile -i merkle_tree.zok
+	zokrates compile -i trollup.zok
 
 clean:
-	rm abi.json out out.r1cs out.wtns witness verification.key proving.key proof.json verifier.sol
+	rm abi.json out out.r1cs out.wtns witness verification.key proof.json verifier.sol
