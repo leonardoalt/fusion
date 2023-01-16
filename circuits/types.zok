@@ -1,0 +1,28 @@
+const u32 DEPTH = 256;
+
+struct Point {
+	field x;
+	field y;
+}
+
+struct Signature {
+	Point r;
+	field s;
+	Point a;
+	field m;
+}
+
+struct Tx {
+	field sender;
+	field to;
+	field nonce;
+	field value;
+	Signature sig;
+}
+
+struct Account {
+	field id;
+	field balance;
+	field nonce;
+}
+

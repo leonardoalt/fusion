@@ -63,7 +63,7 @@ async fn run_node() -> anyhow::Result<()> {
                 state = txs.iter().fold(state, apply_tx);
                 println!("Computed L2 state root is {:?}", state.root());
 
-                match Prover::prove(&txs[0].tx, &pre_state, &state) {
+                match Prover::prove(&txs[0], &pre_state, &state) {
                     Err(e) => println!("Could not generate proof: {e}"),
                     Ok((proof, input)) => {
                         l1_contract
@@ -112,7 +112,9 @@ async fn run_node() -> anyhow::Result<()> {
 
 fn validate_tx(state: &State, tx: &SignedTx) -> anyhow::Result<()> {
     let account = state.get(&tx.tx.sender);
-    if account.balance < tx.tx.value {
+    if tx.tx.sender == tx.tx.to {
+        Err(anyhow::anyhow!("Tx to self."))
+    } else if account.balance < tx.tx.value {
         Err(anyhow::anyhow!("Insufficient balance"))
     } else if account.nonce >= tx.tx.nonce {
         Err(anyhow::anyhow!("Nonce too low"))

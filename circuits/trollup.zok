@@ -1,0 +1,9 @@
+import "./merkle_tree" as state;
+import "./babyjubjub_signature" as signature;
+
+from "./types" import DEPTH, Tx, Account;
+
+def main(field preRoot, Tx tx, Account preAccount, private field postRoot, private bool[DEPTH] directionSelector, private field[DEPTH] prePath, private field[DEPTH] postPath) {
+	assert(state(preRoot, tx, preAccount, postRoot, directionSelector, prePath, postPath));
+	assert(signature(tx.sig));
+}
