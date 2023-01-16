@@ -1,22 +1,19 @@
-//import "ecc/edwardsScalarMult" as scalarMult;
 import "ecc/edwardsAdd" as add;
-import "utils/pack/bool/nonStrictUnpack256" as unpack256bool;
 import "ecc/edwardsOnCurve" as onCurve;
 import "ecc/edwardsOrderCheck" as orderCheck;
 from "ecc/babyjubjubParams" import BabyJubJubParams;
+
 import "hashes/poseidon/poseidon" as poseidon;
 
-// Debug
-import "utils/pack/bool/pack256" as pack256bool;
+import "utils/pack/bool/nonStrictUnpack256" as unpack256bool;
 
 from "./types" import Tx, Signature;
 
-// Function that implements scalar multiplication for a fixed base point
-// Curve parameters are defined with the last argument
-// The exponent is hard-coded to a 256bit scalar, hence we allow wrapping around the group for certain
-// curve parameters.
-// Note that the exponent array is not check to be boolean in this gadget
-// Reference: https://github.com/zcash-hackworks/sapling-crypto/blob/master/src/jubjub/fs.rs#L555
+/// Adaptation of `scalarMult` from Zokrates' stdlib
+/// which allows any number of bits in the exponent.
+/// Here we use 257 more specifically, since we have a Poseidon hash (254 bits)
+/// multiplied by 8 in https://github.com/arnaucube/babyjubjub-rs
+/// which gives us 257 bits since the operation is done on big numbers.
 def scalarMult<BITS>(bool[BITS] exponent, field[2] pt, BabyJubJubParams context) -> field[2] {
     field[2] infinity = context.INFINITY;
 
@@ -37,24 +34,11 @@ def scalarMult<BITS>(bool[BITS] exponent, field[2] pt, BabyJubJubParams context)
 /// Verifies an EdDSA Signature.
 ///
 /// Checks the correctness of a given EdDSA Signature (R,S) for the provided
-/// public key A and message (M0, M1).
-/// This python repo provides the tooling for creating valid signatures:
-/// https://github.com/Zokrates/pycrypto
+/// public key A and message M.
+/// This is based on the verification done in
+/// https://github.com/arnaucube/babyjubjub-rs
 ///
-/// For more information see:
-/// https://en.wikipedia.org/wiki/EdDSA
-/// https://eprint.iacr.org/2015/677.pdf
-///
-/// Arguments:
-///    R: Curve point. Hidden version of the per-message nonce.
-///    S: Field element. Signature to be verified.
-///    A: Curve point. Public part of the key used to create S.
-///    M0: 256bit array. First 256bits of the message used to create S  .
-///    M1: 256bit array. Trailing 256bits of the message used to create S  .
-///    context: Curve parameters used to create S.
-///
-/// Returns:
-///     Return true for S being a valid EdDSA Signature, false otherwise.
+/// Returns true if `sig` is a valid signature, false otherwise.
 def main(Signature sig) -> bool {
 	BabyJubJubParams context = BabyJubJubParams {
 		// Order of the curve for reference: 21888242871839275222246405745257275088614511777268538073601725287587578984328
@@ -79,25 +63,16 @@ def main(Signature sig) -> bool {
     assert(onCurve([sig.r.x, sig.r.y], context)); // throws if R is not on curve
     assert(orderCheck([sig.r.x, sig.r.y], context));
 
-	field po = poseidon::<5>([sig.r.x, sig.r.y, sig.a.x, sig.a.y, sig.m]);
-	bool[257] hRAM = [...unpack256bool(po)[2..], false, false, false];
-	//bool[256] hRAM = unpack256bool(po * 8);
-	/*
-	bool[256] un = unpack256bool(po);
-	bool[256] mut hRAM = [false; 256];
-	for u32 i in 0..253 {
-		hRAM[i] = un[i + 3];
-	}
-	*/
+	field hm = poseidon::<5>([sig.r.x, sig.r.y, sig.a.x, sig.a.y, sig.m]);
+	bool[257] hm8 = [...unpack256bool(hm)[2..], false, false, false];
 
     bool[256] sBits = unpack256bool(sig.s);
     field[2] lhs = scalarMult(sBits, G, context);
 
-    field[2] AhRAM = scalarMult(hRAM, [sig.a.x, sig.a.y], context);
-    field[2] rhs = add([sig.r.x, sig.r.y], AhRAM, context);
+    field[2] Ahm8 = scalarMult(hm8, [sig.a.x, sig.a.y], context);
+    field[2] rhs = add([sig.r.x, sig.r.y], Ahm8, context);
 
-    bool out = lhs == rhs;
-    assert(out);
+    assert(lhs == rhs);
 
 	return true;
 }

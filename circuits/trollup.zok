@@ -3,7 +3,7 @@ import "./babyjubjub_signature" as signature;
 
 from "./types" import DEPTH, Tx, Account;
 
-def main(field preRoot, Tx tx, Account preAccount, private field postRoot, private bool[DEPTH] directionSelector, private field[DEPTH] prePath, private field[DEPTH] postPath) {
-	assert(state(preRoot, tx, preAccount, postRoot, directionSelector, prePath, postPath));
+def main(field preRoot, field postRoot, Tx tx, Account[2] preAccounts, private bool[2][DEPTH] directionSelector, private field[2][DEPTH] prePath, private field[2][DEPTH] postPath) {
+	assert(state(preRoot, postRoot, tx, preAccounts, directionSelector, prePath, postPath));
 	assert(signature(tx.sig));
 }

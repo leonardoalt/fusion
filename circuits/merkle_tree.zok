@@ -41,24 +41,36 @@ def verify_merkle_tree(field root, field leaf, bool[DEPTH] directionSelector, fi
 	return digest == root;
 }
 
-def main(field preRoot, Tx tx, Account preAccount, field postRoot, bool[DEPTH] directionSelector, field[DEPTH] prePath, field[DEPTH] postPath) -> bool {
+def main(field preRoot, field postRoot, Tx tx, Account[2] preAccounts, bool[2][DEPTH] directionSelector, field[2][DEPTH] prePath, field[2][DEPTH] postPath) -> bool {
 	// Verify current state
-	assert(verify_merkle_tree(preRoot, hash_leaf(preAccount), directionSelector, prePath));
+	for u32 i in 0..2 {
+		assert(verify_merkle_tree(preRoot, hash_leaf(preAccounts[i]), directionSelector[i], prePath[i]));
+	}
 
 	/* Apply tx changes */
-	assert(tx.sender == preAccount.id);
-	assert(preAccount.balance >= tx.value);
-	assert(preAccount.nonce < tx.nonce);
+	assert(tx.sender == preAccounts[0].id);
+	assert(tx.to == preAccounts[1].id);
 
-	Account postAccount = Account {
-		id: preAccount.id,
-		balance: preAccount.balance - tx.value,
+	assert(preAccounts[0].balance >= tx.value);
+	assert(preAccounts[0].nonce < tx.nonce);
+
+	Account postAccountSender = Account {
+		id: preAccounts[0].id,
+		balance: preAccounts[0].balance - tx.value,
 		nonce: tx.nonce
 	};
+
+	Account postAccountRecipient = Account {
+		id: preAccounts[1].id,
+		balance: preAccounts[1].balance + tx.value,
+		nonce: preAccounts[1].nonce
+	};
+
 	/******************/
 
 	// Verify new state
-	assert(verify_merkle_tree(postRoot, hash_leaf(postAccount), directionSelector, postPath));
+	assert(verify_merkle_tree(postRoot, hash_leaf(postAccountSender), directionSelector[0], postPath[0]));
+	assert(verify_merkle_tree(postRoot, hash_leaf(postAccountRecipient), directionSelector[1], postPath[1]));
 
 	return true;
 }
