@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.66"
-babyjubjub-rs = "0.0.10"
+babyjubjub-rs = { git = "https://github.com/leonardoalt/babyjubjub-rs" }
 ethers-core = { git = "https://github.com/gakonst/ethers-rs" }
 poseidon = { git = "https://github.com/leonardoalt/Poseidon_BN128", branch = "main" }
 trollup-api = { path = "../trollup-api" }

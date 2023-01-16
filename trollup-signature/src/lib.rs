@@ -15,7 +15,7 @@ pub fn sign(tx: &Tx, private_key: String) -> anyhow::Result<U512> {
     }
 }
 
-fn hash_tx(tx: &Tx) -> U256 {
+pub fn hash_tx(tx: &Tx) -> U256 {
     poseidon::hash_BN_128(
         [
             tx.sender.to_bn128_field(),
