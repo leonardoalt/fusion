@@ -1,5 +1,7 @@
 use crate::merkle_tree::{MerkleTree, Value};
-use crate::poseidon_hasher::{PoseidonHasher, ToBn128Field, ToU256};
+use crate::poseidon_hasher::{PoseidonHasher, ToBn128Field};
+
+use trollup_types::ToU256;
 
 use ethers::types::U256;
 use serde::{Deserialize, Serialize};
