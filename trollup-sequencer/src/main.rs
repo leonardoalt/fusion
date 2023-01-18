@@ -24,6 +24,7 @@ use trollup_l1::trollup;
 use trollup_sequencer::node::*;
 use trollup_sequencer::prover::*;
 use trollup_sequencer::state::{Account, State};
+use trollup_types::PublicKey;
 
 type Db = Arc<Mutex<Vec<SignedTx>>>;
 
@@ -111,7 +112,10 @@ async fn run_node() -> anyhow::Result<()> {
 }
 
 fn validate_tx(state: &State, tx: &SignedTx) -> anyhow::Result<()> {
-    let account = state.get(&tx.tx.sender);
+    let sender_pk: PublicKey = tx.tx.sender.into();
+    let sender_addr = sender_pk.address();
+
+    let account = state.get(&sender_addr);
     if tx.tx.sender == tx.tx.to {
         Err(anyhow::anyhow!("Tx to self."))
     } else if account.balance < tx.tx.value {
@@ -124,21 +128,24 @@ fn validate_tx(state: &State, tx: &SignedTx) -> anyhow::Result<()> {
 }
 
 fn apply_tx(mut state: State, tx: &SignedTx) -> State {
-    let key_sender = tx.tx.sender;
-    let key_to = tx.tx.to;
+    let sender_pk: PublicKey = tx.tx.sender.into();
+    let sender_addr = sender_pk.address();
 
-    let account_sender = state.get(&key_sender);
-    let account_to = state.get(&key_to);
+    let to_pk: PublicKey = tx.tx.to.into();
+    let to_addr = to_pk.address();
+
+    let account_sender = state.get(&sender_addr);
+    let account_to = state.get(&to_addr);
 
     let new_account_sender = Account::new(
-        key_sender,
+        sender_addr,
         account_sender.balance - tx.tx.value,
         tx.tx.nonce,
     );
-    let new_account_to = Account::new(key_to, account_to.balance + tx.tx.value, account_to.nonce);
+    let new_account_to = Account::new(to_addr, account_to.balance + tx.tx.value, account_to.nonce);
 
-    state.update(&key_sender, new_account_sender);
-    state.update(&key_to, new_account_to);
+    state.update(&sender_addr, new_account_sender);
+    state.update(&to_addr, new_account_to);
 
     state
 }

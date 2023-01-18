@@ -4,6 +4,8 @@ use ethers::types::U256;
 use poseidon::*;
 use zokrates_field::Bn128Field;
 
+use trollup_types::ToU256;
+
 #[derive(Default, Clone)]
 pub struct PoseidonHasher(Vec<Bn128Field>);
 
@@ -14,18 +16,6 @@ impl Hasher for PoseidonHasher {
 
     fn finish(self) -> U256 {
         poseidon::hash_BN_128(self.0).to_u256()
-    }
-}
-
-pub trait ToU256 {
-    fn to_u256(&self) -> U256;
-}
-
-impl ToU256 for Bn128Field {
-    fn to_u256(&self) -> U256 {
-        let mut bytes: [u8; 32] = self.to_byte_vector().try_into().unwrap();
-        bytes.reverse();
-        bytes.into()
     }
 }
 

@@ -48,8 +48,8 @@ def main(field preRoot, field postRoot, Tx tx, Account[2] preAccounts, bool[2][D
 	}
 
 	/* Apply tx changes */
-	assert(tx.sender == preAccounts[0].id);
-	assert(tx.to == preAccounts[1].id);
+	assert(hash::<2>([tx.sender.x, tx.sender.y]) == preAccounts[0].id);
+	assert(hash::<2>([tx.to.x, tx.to.y]) == preAccounts[1].id);
 
 	assert(preAccounts[0].balance >= tx.value);
 	assert(preAccounts[0].nonce < tx.nonce);

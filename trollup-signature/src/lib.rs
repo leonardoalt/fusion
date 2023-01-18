@@ -2,7 +2,8 @@ use ethers_core::types::{U256, U512};
 
 use trollup_api::{SignedTx, Tx};
 use trollup_types::{
-    PrivateKey, ToBabyJubjubPoint, ToBabyJubjubSignature, ToBigInt, ToBn128Field, ToU256,
+    FromBabyJubjubPoint, PrivateKey, PublicKey, ToBabyJubjubPoint, ToBabyJubjubSignature, ToBigInt,
+    ToBn128Field, ToU256,
 };
 
 pub fn sign(tx: &Tx, private_key: String) -> anyhow::Result<U512> {
@@ -16,10 +17,12 @@ pub fn sign(tx: &Tx, private_key: String) -> anyhow::Result<U512> {
 }
 
 pub fn hash_tx(tx: &Tx) -> U256 {
+    let sender_pk = PublicKey::from_babyjubjub_point(&tx.sender.to_babyjubjub_point());
+    let to_pk = PublicKey::from_babyjubjub_point(&tx.sender.to_babyjubjub_point());
     poseidon::hash_BN_128(
         [
-            tx.sender.to_bn128_field(),
-            tx.to.to_bn128_field(),
+            sender_pk.to_bn128_field(),
+            to_pk.to_bn128_field(),
             tx.nonce.to_bn128_field(),
             tx.value.to_bn128_field(),
         ]

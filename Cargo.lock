@@ -3887,6 +3887,7 @@ dependencies = [
  "ethers-core",
  "ff_ce 0.11.0",
  "num-bigint 0.4.3",
+ "poseidon",
  "serde",
  "zokrates_field",
 ]

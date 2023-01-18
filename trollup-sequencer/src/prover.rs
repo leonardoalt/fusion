@@ -4,7 +4,9 @@ use crate::state::{Account, State};
 use trollup_api;
 use trollup_l1::trollup;
 use trollup_signature::hash_tx;
-use trollup_types::{FromBabyJubjubPoint, Point, ToBabyJubjubPoint, ToBabyJubjubSignature, ToU256};
+use trollup_types::{
+    FromBabyJubjubPoint, Point, PublicKey, ToBabyJubjubPoint, ToBabyJubjubSignature, ToU256,
+};
 
 use bitmaps::Bitmap;
 
@@ -28,9 +30,9 @@ use std::path::Path;
 #[derive(Serialize_tuple, Deserialize_tuple, Debug)]
 pub struct CircuitInput {
     pre_root: U256,
+    post_root: U256,
     tx: CircuitTx,
     pre_accounts: Vec<Account>,
-    post_root: U256,
     direction_selector: Vec<Vec<bool>>,
     pre_path: Vec<Vec<U256>>,
     post_path: Vec<Vec<U256>>,
@@ -38,17 +40,19 @@ pub struct CircuitInput {
 
 impl CircuitInput {
     pub fn new(tx: CircuitTx, pre_state: &State, post_state: &State) -> Self {
+        let sender_addr = PublicKey(tx.sender.clone()).address();
+        let to_addr = PublicKey(tx.to.clone()).address();
         Self {
             pre_root: pre_state.root(),
-            tx: tx.clone(),
-            pre_accounts: vec![pre_state.get(&tx.sender), pre_state.get(&tx.to)],
+            tx,
+            pre_accounts: vec![pre_state.get(&sender_addr), pre_state.get(&to_addr)],
             post_root: post_state.root(),
             direction_selector: vec![
-                tx.sender.to_bitmap().to_vec_bool(),
-                tx.to.to_bitmap().to_vec_bool(),
+                sender_addr.to_bitmap().to_vec_bool(),
+                to_addr.to_bitmap().to_vec_bool(),
             ],
-            pre_path: vec![pre_state.proof(&tx.sender), pre_state.proof(&tx.to)],
-            post_path: vec![post_state.proof(&tx.sender), post_state.proof(&tx.to)],
+            pre_path: vec![pre_state.proof(&sender_addr), pre_state.proof(&to_addr)],
+            post_path: vec![post_state.proof(&sender_addr), post_state.proof(&to_addr)],
         }
     }
 }
@@ -69,8 +73,8 @@ impl ToVecBool for Bitmap<256> {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CircuitTx {
-    sender: U256,
-    to: U256,
+    sender: Point,
+    to: Point,
     nonce: U256,
     value: U256,
     sig: CircuitTxSignature,
@@ -82,9 +86,11 @@ trait ToCircuitTx {
 
 impl ToCircuitTx for trollup_api::SignedTx {
     fn to_circuit_tx(&self) -> CircuitTx {
+        let sender_pk: PublicKey = self.tx.sender.into();
+        let to_pk: PublicKey = self.tx.to.into();
         CircuitTx {
-            sender: self.tx.sender,
-            to: self.tx.to,
+            sender: sender_pk.0,
+            to: to_pk.0,
             nonce: self.tx.nonce,
             value: self.tx.value,
             sig: self.clone().into(),
@@ -122,7 +128,7 @@ impl Prover {
         tx: &trollup_api::SignedTx,
         pre_state: &State,
         post_state: &State,
-    ) -> Result<(trollup::Proof, [U256; 17]), String> {
+    ) -> Result<(trollup::Proof, [U256; 20]), String> {
         let path = Path::new("../circuits/out");
         let file = File::open(path)
             .map_err(|why| format!("Could not open {}: {}", path.display(), why))?;
@@ -216,7 +222,7 @@ impl Prover {
 
 trait ToTrollupL1 {
     fn to_trollup_l1_proof(&self) -> trollup::Proof;
-    fn to_trollup_l1_input(&self) -> [U256; 17usize];
+    fn to_trollup_l1_input(&self) -> [U256; 20usize];
 }
 
 impl ToTrollupL1 for Proof<Bn128Field, G16> {
@@ -246,8 +252,8 @@ impl ToTrollupL1 for Proof<Bn128Field, G16> {
         }
     }
 
-    fn to_trollup_l1_input(&self) -> [U256; 17usize] {
-        assert_eq!(self.inputs.len(), 17);
+    fn to_trollup_l1_input(&self) -> [U256; 20usize] {
+        assert_eq!(self.inputs.len(), 20);
         self.inputs
             .iter()
             .map(|x| U256::from_str_radix(&x[2..], 16).unwrap())
