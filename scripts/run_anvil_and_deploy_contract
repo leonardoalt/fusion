@@ -1,0 +1,11 @@
+#!/usr/bin/sh
+
+# This script requires ETH_PRIVATE_KEY, ETH_FROM and ETH_RPC_URL to be set in the environment.
+
+echo "Starting Anvil..."
+nohup anvil &> nohup_anvil.out &
+sleep 1
+
+echo "Deploying contract..."
+export TROLLUP_L1_CONTRACT=$(cd l1-verifier && forge script script/Trollup.s.sol --rpc-url $ETH_RPC_URL --private-key $ETH_PRIVATE_KEY --broadcast | sed -n -E 's/.*contract Trollup (.*$)/\1/p' )  
+echo "Contract deployed at $TROLLUP_L1_CONTRACT"

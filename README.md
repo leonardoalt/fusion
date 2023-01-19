@@ -7,23 +7,23 @@ simplest L2 that can be used in production.
 
 This repository contains the entire Trollup tool suite:
 
-- `sequencer`: the Trollup node. Receives L2 transactions via RPC, builds
+- `trollup-sequencer`: the Trollup node. Receives L2 transactions via RPC, builds
   blocks, and sends them for verification on L1.
 - `l1-verifier`: the Trollup contracts deployed on L1. These contracts provide
   the enter/exit L2 functionalities and block verification for L2 nodes.
-- `sign`: a simple CLI interface to sign Trollup transactions and/or send them
-  to a node.
+- `trollup-wallet`: a simple CLI interface to sign/send Trollup transactions.
 
 ## Run it
 
 Requirements: [foundry](https://github.com/foundry-rs/foundry).
 
-1. Start an `anvil` node, and set the env variable `ETH_RPC_URL` to where `anvil` is listening - usually `http://localhost:8545`.
-2. Set `ETH_PRIVATE_KEY` to the private key that will deploy the L1 contract. In `l1-verifier`, run `forge script script/Verifier.s.sol --rpc-url $ETH_RPC_URL --private-key $ETH_PRIVATE_KEY --broadcast`.
-3. Take the deployed contract address (likely 0x5fbdb2315678afecb367f032d93f642f64180aa3 with `anvil`'s default configuration) and set in `TROLLUP_L1_CONTRACT`.
-4. In `sequencer`, run `cargo run`.
-5. In `sign`, you can use `cargo run -- send` to sign and send transactions to the Trollup node. Run `cargo run -- send -h` to see the parameters.
-6. You can also send Ethereum L1 transactions to the Trollup contract to enter/exit the L2.
+1. Set `ETH_PRIVATE_KEY` and `ETH_FROM` to the private and public keys that will deploy and use the L1 contract.
+2. Set `ETH_RPC_URL` to the endpoint. Since we are using `anvil` here, this is usually `http://localhost:8545`.
+3. Run `source ./scripts/run_anvil_and_deploy_contract` which starts `anvil` and deploys the contract.
+4. Run `./scripts/run_node` to start the node.
+5. You can run `./scripts/listen_to_node` to check the ongoing output from the node.
+6. Now you can also run `./scripts/send_random_tx` to send transactions.
+7. To stop everything, run `./scripts/kill_node` and `./scripts/kill_anvil`.
 
 ## What
 
