@@ -75,17 +75,17 @@ There are no VM and smart contracts at the moment.
 
 ### Done
 
-- [ ] L2 RPC node
-- [ ] L2 sequencer
-- [ ] State verification circuit
-- [ ] State verification prover
-- [ ] Baby Jubjub signature verification circuit
-- [ ] Baby Jubjub signature verification prover
-- [ ] Transaction verification circuit
-- [ ] Transaction verification prover
-- [ ] L1 verifier
-- [ ] L2 block verification using L1 verifier
-- [ ] Baby Jubjub CLI wallet
+- [x] L2 RPC node
+- [x] L2 sequencer
+- [x] State verification circuit
+- [x] State verification prover
+- [x] Baby Jubjub signature verification circuit
+- [x] Baby Jubjub signature verification prover
+- [x] Transaction verification circuit
+- [x] Transaction verification prover
+- [x] L1 verifier
+- [x] L2 block verification using L1 verifier
+- [x] Baby Jubjub CLI wallet
 
 ### TODO
 
