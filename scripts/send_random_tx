@@ -1,0 +1,10 @@
+#!/usr/bin/sh
+
+sk1=$(cd trollup-wallet && cargo run -- new)
+sk2=$(cd trollup-wallet && cargo run -- new)
+
+pk1=$(cd trollup-wallet && cargo run -- public --private-key $sk1)
+pk2=$(cd trollup-wallet && cargo run -- public --private-key $sk2)
+
+echo "Sending tx..."
+$(cd trollup-wallet && cargo run -- send --private-key $sk1 --sender $pk1 --to $pk2 --value 0 --nonce 1 &> /dev/null)
