@@ -18,9 +18,9 @@ transactions, verifies them, and updates the L2 state root accordingly.
 This repository contains the entire Trollup tool suite:
 
 - `circuits`: the SNARK state and signature verification ZoKrates code.
-- `prover`: the prover that takes a signed transaction and builds a ZKP of
+- `trollup-prover`: the prover that takes a signed transaction and builds a ZKP of
   state changes and signature.
-- `sequencer`: the Trollup node. Receives L2 transactions via RPC, builds
+- `trollup-sequencer`: the Trollup node. Receives L2 transactions via RPC, builds
   blocks, and sends them for verification on L1.
 - `l1-verifier`: the Trollup contracts deployed on L1. These contracts provide
   block verification and canonical state root updates for L2 nodes.
