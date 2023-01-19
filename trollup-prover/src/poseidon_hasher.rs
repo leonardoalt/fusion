@@ -1,6 +1,6 @@
 use crate::merkle_tree::Hasher;
 
-use ethers::types::U256;
+use ethers_core::types::U256;
 use poseidon::*;
 use zokrates_field::Bn128Field;
 

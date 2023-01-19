@@ -1,7 +1,10 @@
+pub mod merkle_tree;
+mod poseidon_hasher;
+pub mod state;
+
 use crate::merkle_tree::ToBitmap;
 use crate::state::{Account, State};
 
-use trollup_api;
 use trollup_l1::trollup;
 use trollup_signature::hash_tx;
 use trollup_types::{
@@ -10,7 +13,7 @@ use trollup_types::{
 
 use bitmaps::Bitmap;
 
-use ethers::types::U256;
+use ethers_core::types::U256;
 
 use serde::{Deserialize, Serialize};
 use serde_json::from_reader;

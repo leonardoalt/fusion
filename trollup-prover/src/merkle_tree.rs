@@ -1,5 +1,5 @@
 use bitmaps::Bitmap;
-use ethers::types::U256;
+use ethers_core::types::U256;
 
 use core::marker::PhantomData;
 use std::collections::BTreeMap;

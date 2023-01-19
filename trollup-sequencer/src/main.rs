@@ -21,9 +21,9 @@ use tower_http::cors::{Any, CorsLayer};
 use trollup_api::*;
 use trollup_l1::trollup;
 
+use trollup_prover::state::{Account, State};
+use trollup_prover::*;
 use trollup_sequencer::node::*;
-use trollup_sequencer::prover::*;
-use trollup_sequencer::state::{Account, State};
 use trollup_types::PublicKey;
 
 type Db = Arc<Mutex<Vec<SignedTx>>>;

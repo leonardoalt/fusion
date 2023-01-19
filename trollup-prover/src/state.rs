@@ -3,7 +3,7 @@ use crate::poseidon_hasher::{PoseidonHasher, ToBn128Field};
 
 use trollup_types::ToU256;
 
-use ethers::types::U256;
+use ethers_core::types::U256;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]

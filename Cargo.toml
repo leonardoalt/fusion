@@ -1,6 +1,7 @@
 [workspace]
 members = [
 	"trollup-api",
+	"trollup-prover",
 	"trollup-sequencer",
 	"trollup-signature",
 	"trollup-types",
