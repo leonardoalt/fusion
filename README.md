@@ -26,9 +26,37 @@ This repository contains the entire Trollup tool suite:
   block verification and canonical state root updates for L2 nodes.
 - `trollup-wallet`: a simple CLI interface to sign/send Trollup transactions.
 
-## Run it
+## Cloning the repository
 
-Requirements: [foundry](https://github.com/foundry-rs/foundry).
+```
+git clone --recurse-submodules https://github.com/trollup/trollup.git
+```
+
+If you already cloned the repository without submodules, you can run the command below to initialize it:
+```
+git submodule update --init --recursive
+```
+
+## Building and Run
+
+Trollup requires the following installed:
+- [Rust](https://www.rust-lang.org/learn/get-started)
+- [foundry](https://github.com/foundry-rs/foundry)
+- [Zokrates](https://zokrates.github.io)
+
+### Building the circuits
+```
+cd circuits && make
+```
+
+**Note:** the current circuits require at least 32GB of RAM to compile.
+
+### Building sequencer
+```
+cargo build --release --bin trollup-sequencer
+```
+
+### Running
 
 1. Set `ETH_PRIVATE_KEY` and `ETH_FROM` to the private and public keys that will deploy and use the L1 contract.
 2. Set `ETH_RPC_URL` to an Ethereum RPC endpoint. Since we are using `anvil` here, this is usually `http://localhost:8545`.
