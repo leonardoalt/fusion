@@ -37,7 +37,7 @@ If you already cloned the repository without submodules, you can run the command
 git submodule update --init --recursive
 ```
 
-## Building and Run
+## Dependencies
 
 Trollup requires the following installed:
 - [Rust](https://www.rust-lang.org/learn/get-started)
