@@ -13,7 +13,7 @@ futures = "0.3.25"
 hyper = "0.14.23"
 jsonrpsee = { version = "0.16.0", features = ["server"] }
 log = "0.4.17"
-tokio = "1.21.2"
+tokio = "1.24.2"
 tower = "0.4.13"
 tower-http = { version = "0.3.4", features = ["cors"] }
 trollup-l1 = { path = "../l1-verifier/out/bindings" }
