@@ -11,7 +11,7 @@ babyjubjub-rs = { git = "https://github.com/leonardoalt/babyjubjub-rs" }
 clap = { version = "4.0.22", features = ["derive"] }
 ethers = { git = "https://github.com/gakonst/ethers-rs" }
 num-bigint = "0.4.3"
-tokio = { version = "1.21.2", features = ["macros"] }
+tokio = { version = "1.24.2", features = ["macros"] }
 trollup-api = { path = "../trollup-api" }
 trollup-signature = { path = "../trollup-signature" }
 trollup-types = { path = "../trollup-types" }
