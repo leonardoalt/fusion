@@ -51,7 +51,7 @@ cd circuits && make
 
 **Note:** the current circuits require at least 32GB of RAM to compile.
 
-### Building sequencer
+### Building the sequencer (has prover as dependency)
 ```
 cargo build --release --bin trollup-sequencer
 ```
