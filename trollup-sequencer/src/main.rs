@@ -66,9 +66,9 @@ async fn run_node() -> anyhow::Result<()> {
 
                 match Prover::prove(&txs[0], &pre_state, &state) {
                     Err(e) => println!("Could not generate proof: {e}"),
-                    Ok((proof, input)) => {
+                    Ok(proof) => {
                         l1_contract
-                            .submit_block(proof, input.to_vec())
+                            .submit_block([proof])
                             .gas(1000000)
                             .send()
                             .await

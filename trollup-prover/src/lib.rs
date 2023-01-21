@@ -131,7 +131,7 @@ impl Prover {
         tx: &trollup_api::SignedTx,
         pre_state: &State,
         post_state: &State,
-    ) -> Result<(trollup::Proof, [U256; 20]), String> {
+    ) -> Result<trollup::TxProof, String> {
         let path = Path::new("../circuits/out");
         let file = File::open(path)
             .map_err(|why| format!("Could not open {}: {}", path.display(), why))?;
@@ -157,7 +157,7 @@ impl Prover {
             .map_err(|why| format!("Could not read {}: {}", pk_path.display(), why))?;
 
         let proof: Proof<Bn128Field, G16> = Ark::generate_proof(prog, witness, pk);
-        let ret = (proof.to_trollup_l1_proof(), proof.to_trollup_l1_input());
+        let ret = proof.to_trollup_l1_tx();
 
         /*
         let proof = serde_json::to_string_pretty(&TaggedProof::<Bn128Field, G16>::new(
@@ -224,11 +224,19 @@ impl Prover {
 }
 
 trait ToTrollupL1 {
+    fn to_trollup_l1_tx(&self) -> trollup::TxProof;
     fn to_trollup_l1_proof(&self) -> trollup::Proof;
     fn to_trollup_l1_input(&self) -> [U256; 20usize];
 }
 
 impl ToTrollupL1 for Proof<Bn128Field, G16> {
+    fn to_trollup_l1_tx(&self) -> trollup::TxProof {
+        trollup::TxProof {
+            proof: self.to_trollup_l1_proof(),
+            input: self.to_trollup_l1_input().to_vec(),
+        }
+    }
+
     fn to_trollup_l1_proof(&self) -> trollup::Proof {
         trollup::Proof {
             a: trollup::G1Point {
