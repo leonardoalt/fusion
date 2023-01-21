@@ -39,7 +39,7 @@ contract TrollupTest is Test {
         ];
 
         assertEq(trollup.root(), 0);
-        trollup.submitBlock(proof, staticToDynArray(input));
+        trollup.submitBlock([Trollup.TxProof(proof, staticToDynArray(input))]);
         assertEq(trollup.root(), 17055482318342999599154275252646722421924952339552330539432664958755143701382);
     }
 
