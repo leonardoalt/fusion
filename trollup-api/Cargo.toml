@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 ethers-core = { git = "https://github.com/gakonst/ethers-rs" }
 serde = "1.0.152"
+tarpc = { version = "0.31", features = ["full"] }

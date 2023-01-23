@@ -1,11 +1,9 @@
-use std::{sync::Arc, time::Duration};
+use tarpc::{client, context, tokio_serde::formats::Json};
 
 use clap::{Parser, Subcommand};
-use ethers::{
-    providers::{Http, Provider},
-    types::{U256, U512},
-};
+use ethers::types::{U256, U512};
 use num_bigint::BigInt;
+use std::net::IpAddr;
 
 use trollup_api::*;
 use trollup_types::{PrivateKey, ToU256};
@@ -62,10 +60,15 @@ async fn send(send_args: CLITx) -> anyhow::Result<()> {
 
     trollup_signature::verify_tx_signature(&signed)?;
 
-    let provider =
-        Provider::<Http>::try_from(SERVER_ADDRESS)?.interval(Duration::from_millis(10u64));
-    let client = Arc::new(provider);
-    client.request(RPC_SUBMIT_TX, signed).await?;
+    let server_addr = (IpAddr::V4(SOCKET_ADDRESS.parse().unwrap()), SOCKET_PORT);
+    let transport = tarpc::serde_transport::tcp::connect(server_addr, Json::default);
+    let client = TrollupRPCClient::new(client::Config::default(), transport.await?).spawn();
+    let tx_receipt = client
+        .submit_transaction(context::current(), signed)
+        .await
+        .unwrap();
+
+    println!("{tx_receipt}");
 
     Ok(())
 }
@@ -94,7 +97,8 @@ impl From<CLITx> for SignedTx {
     }
 }
 
-const SERVER_ADDRESS: &str = "http://localhost:38171";
+const SOCKET_ADDRESS: &str = "127.0.0.1";
+const SOCKET_PORT: u16 = 38171;
 
 #[derive(Debug, Parser)]
 #[clap(name = "Trollup transaction signer and sender", version = env!("CARGO_PKG_VERSION"))]
