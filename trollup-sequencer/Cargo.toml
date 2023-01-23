@@ -10,12 +10,9 @@ anyhow = "1.0.66"
 clap = { version = "4.1.1", features = ["derive"] }
 ethers = { git = "https://github.com/gakonst/ethers-rs" }
 futures = "0.3.25"
-hyper = "0.14.23"
-jsonrpsee = { version = "0.16.0", features = ["server"] }
 log = "0.4.17"
-tokio = "1.24.2"
-tower = "0.4.13"
-tower-http = { version = "0.3.4", features = ["cors"] }
+tarpc = { version = "0.31", features = ["full"] }
+tokio = { version = "1.24.2", features = ["macros", "sync"] }
 trollup-l1 = { path = "../l1-verifier/out/bindings" }
 trollup-api = { path = "../trollup-api" }
 trollup-prover = { path = "../trollup-prover" }
