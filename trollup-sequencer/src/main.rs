@@ -6,13 +6,13 @@ use std::{
 use ethers::{
     providers::{Http, Provider},
     signers::LocalWallet,
-    types,
 };
 use tokio::sync::mpsc;
 
 use trollup_api::*;
 use trollup_l1::trollup;
 
+use trollup_config::Config;
 use trollup_prover::state::{Account, State};
 use trollup_prover::*;
 use trollup_sequencer::node::*;
@@ -20,11 +20,6 @@ use trollup_sequencer::server::*;
 use trollup_types::PublicKey;
 
 type MemPool = Arc<Mutex<Vec<SignedTx>>>;
-
-const DB_PATH: &str = "./db";
-const SOCKET_ADDRESS: &str = "127.0.0.1";
-const SOCKET_PORT: u16 = 38171;
-const MIN_TX_BLOCK: usize = 1;
 
 async fn request_proof(
     tx: SignedTx,
@@ -35,23 +30,22 @@ async fn request_proof(
 }
 
 async fn run_node() -> anyhow::Result<()> {
-    let db_path = Path::new(DB_PATH);
+    let config = Config::from_file("../trollup.toml".to_string());
+
+    let db_path = Path::new(&config.database_path);
     let mempool = init_mempool(db_path);
 
     let (sx, mut rx): (mpsc::Sender<SignedTx>, mpsc::Receiver<SignedTx>) = mpsc::channel(1024);
 
+    let socket_address = config.socket_address.to_string();
     tokio::spawn(async move {
-        run_server(sx, SOCKET_ADDRESS.to_string(), SOCKET_PORT)
+        run_server(sx, socket_address, config.socket_port)
             .await
             .unwrap();
     });
 
-    let private_key = std::env::var("ETH_PRIVATE_KEY")?;
-    let http_endpoint = std::env::var("ETH_RPC_URL")?;
-
     let mut state = State::default();
-
-    let l1_contract = init_l1(private_key, http_endpoint).await.unwrap();
+    let l1_contract = init_l1(&config).await.unwrap();
 
     while let Some(tx) = rx.recv().await {
         let current_root = l1_contract.root().call().await.unwrap();
@@ -60,7 +54,7 @@ async fn run_node() -> anyhow::Result<()> {
         {
             let mut unlocked_mempool = mempool.lock().unwrap();
             unlocked_mempool.push(tx);
-            if unlocked_mempool.len() < MIN_TX_BLOCK {
+            if unlocked_mempool.len() < config.min_tx_block {
                 continue;
             }
         }
@@ -167,15 +161,16 @@ fn init_mempool(_path: &Path) -> MemPool {
 }
 
 async fn init_l1(
-    private_key: String,
-    http_endpoint: String,
+    config: &Config,
 ) -> anyhow::Result<
     trollup::Trollup<ethers::middleware::SignerMiddleware<Provider<Http>, LocalWallet>>,
 > {
-    let node = Arc::new(Node::new_with_private_key(private_key, http_endpoint).await?);
+    let node = Arc::new(
+        Node::new_with_private_key(config.eth_private_key.clone(), config.eth_rpc_url.clone())
+            .await?,
+    );
 
-    let l1_address: types::Address = std::env::var("TROLLUP_L1_CONTRACT")?.parse()?;
-    let l1_contract = trollup::Trollup::new(l1_address, node.http_client.clone());
+    let l1_contract = trollup::Trollup::new(config.trollup_l1_contract, node.http_client.clone());
 
     Ok(l1_contract)
 }

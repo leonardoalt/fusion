@@ -1,0 +1,7 @@
+database_path = "./db"
+eth_rpc_url = "http://localhost:8545"
+eth_private_key = ""
+min_tx_block = 1
+socket_address = "127.0.0.1"
+socket_port = 38171
+trollup_l1_contract = ""
