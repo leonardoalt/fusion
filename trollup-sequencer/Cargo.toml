@@ -18,3 +18,4 @@ trollup-api = { path = "../trollup-api" }
 trollup-prover = { path = "../trollup-prover" }
 trollup-signature = { path = "../trollup-signature" }
 trollup-types = { path = "../trollup-types" }
+trollup-config = { path = "../trollup-config" }
