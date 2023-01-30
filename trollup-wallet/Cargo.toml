@@ -12,7 +12,7 @@ clap = { version = "4.1.2", features = ["derive"] }
 ethers = { git = "https://github.com/gakonst/ethers-rs" }
 num-bigint = "0.4.3"
 tarpc = { version = "0.31", features = ["full"] }
-tokio = { version = "1.24.2", features = ["macros"] }
+tokio = { version = "1.25.0", features = ["macros"] }
 trollup-api = { path = "../trollup-api" }
 trollup-signature = { path = "../trollup-signature" }
 trollup-types = { path = "../trollup-types" }
