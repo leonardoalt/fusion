@@ -9,7 +9,7 @@ edition = "2021"
 anyhow = "1.0.66"
 clap = { version = "4.1.2", features = ["derive"] }
 ethers = { git = "https://github.com/gakonst/ethers-rs" }
-futures = "0.3.25"
+futures = "0.3.26"
 log = "0.4.17"
 tarpc = { version = "0.31", features = ["full"] }
 tokio = { version = "1.24.2", features = ["macros", "sync"] }
