@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.66"
-clap = { version = "4.1.2", features = ["derive"] }
+clap = { version = "4.1.4", features = ["derive"] }
 ethers = { git = "https://github.com/gakonst/ethers-rs" }
 futures = "0.3.26"
 log = "0.4.17"
