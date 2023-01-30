@@ -7,5 +7,7 @@ edition = "2021"
 
 [dependencies]
 ethers-core = { git = "https://github.com/gakonst/ethers-rs" }
+poseidon = { git = "https://github.com/leonardoalt/Poseidon_BN128", branch = "main" }
 serde = "1.0.152"
 tarpc = { version = "0.31", features = ["full"] }
+trollup-types = { path = "../trollup-types" }

@@ -140,7 +140,7 @@ fn apply_tx(mut state: State, tx: &SignedTx) -> State {
 }
 
 fn verify_tx_signature(signed_tx: &SignedTx) -> anyhow::Result<()> {
-    trollup_signature::verify_tx_signature(signed_tx)
+    trollup_wallet::verify_tx_signature(signed_tx)
 }
 
 fn init_mempool(_path: &Path) -> MemPool {
