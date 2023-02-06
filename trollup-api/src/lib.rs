@@ -32,8 +32,6 @@ pub struct SignedTx {
     pub signature: String,
 }
 
-pub const RPC_SUBMIT_TX: &str = "submit_transaction";
-
 #[tarpc::service]
 pub trait TrollupRPC {
     async fn submit_transaction(tx: SignedTx) -> String;
