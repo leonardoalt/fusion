@@ -210,16 +210,13 @@ mod test {
         let n_tx = 1;
 
         tokio::spawn(async move {
-            let sk_1 = trollup_wallet::new_private_key();
-            let pk_1 = trollup_wallet::new_public_key(&sk_1);
-
-            let sk_2 = trollup_wallet::new_private_key();
-            let pk_2 = trollup_wallet::new_public_key(&sk_2);
+            let (sk_1, pk_1) = trollup_wallet::new_key_pair();
+            let (_sk_2, pk_2) = trollup_wallet::new_key_pair();
 
             for i in 0..n_tx {
                 let tx = trollup_api::Tx {
-                    sender: pk_1.clone(),
-                    to: pk_2.clone(),
+                    sender: pk_1.clone().to_u256(),
+                    to: pk_2.clone().to_u256(),
                     nonce: (i + 1).into(),
                     value: 0.into(),
                 };
@@ -241,7 +238,6 @@ mod test {
         }
 
         assert_eq!(contract.root().call().await.unwrap(), state.root());
-        println!("END TEST");
     }
 
     async fn next_trollup_txs(contract: types::Address, provider: &Provider<Http>) -> Vec<Tx> {
