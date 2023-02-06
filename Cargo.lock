@@ -4108,7 +4108,7 @@ name = "poseidon"
 version = "0.1.0"
 source = "git+https://github.com/leonardoalt/Poseidon_BN128?branch=main#c38bbb2783ba6a6d05a10343ce2bde2ef0ceb60c"
 dependencies = [
- "zokrates_field",
+ "zokrates_field 0.5.2",
 ]
 
 [[package]]
@@ -5928,7 +5928,7 @@ dependencies = [
  "zokrates_abi",
  "zokrates_ark",
  "zokrates_ast",
- "zokrates_field",
+ "zokrates_field 0.5.3",
  "zokrates_interpreter",
  "zokrates_proof_systems",
 ]
@@ -5964,7 +5964,7 @@ dependencies = [
  "num-bigint 0.4.3",
  "poseidon",
  "serde",
- "zokrates_field",
+ "zokrates_field 0.5.3",
 ]
 
 [[package]]
@@ -6570,7 +6570,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "zokrates_ast",
- "zokrates_field",
+ "zokrates_field 0.5.2",
 ]
 
 [[package]]
@@ -6596,7 +6596,7 @@ dependencies = [
  "rand 0.8.5",
  "sha3 0.9.1",
  "zokrates_ast",
- "zokrates_field",
+ "zokrates_field 0.5.2",
  "zokrates_proof_systems",
 ]
 
@@ -6615,7 +6615,7 @@ dependencies = [
  "serde_cbor",
  "serde_json",
  "zokrates_embed",
- "zokrates_field",
+ "zokrates_field 0.5.2",
  "zokrates_pest_ast",
 ]
 
@@ -6635,13 +6635,37 @@ dependencies = [
  "ark-std",
  "bellman_ce",
  "sapling-crypto_ce",
- "zokrates_field",
+ "zokrates_field 0.5.2",
 ]
 
 [[package]]
 name = "zokrates_field"
 version = "0.5.2"
 source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.3#d9006cbab88f61a3d04ec6aa6215fd05feba7acf"
+dependencies = [
+ "ark-bls12-377",
+ "ark-bls12-381",
+ "ark-bn254",
+ "ark-bw6-761",
+ "ark-ec",
+ "ark-ff",
+ "ark-serialize",
+ "bellman_ce",
+ "bincode 0.8.0",
+ "lazy_static",
+ "num-bigint 0.2.6",
+ "num-integer",
+ "num-traits 0.2.15",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "sha2 0.8.2",
+]
+
+[[package]]
+name = "zokrates_field"
+version = "0.5.3"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.4#b5f2263410dd1a70f0d6aa6a879b28b754c3fe11"
 dependencies = [
  "ark-bls12-377",
  "ark-bls12-381",
@@ -6675,7 +6699,7 @@ dependencies = [
  "zokrates_abi",
  "zokrates_ast",
  "zokrates_embed",
- "zokrates_field",
+ "zokrates_field 0.5.2",
 ]
 
 [[package]]
@@ -6713,7 +6737,7 @@ dependencies = [
  "regex 0.2.11",
  "serde",
  "zokrates_ast",
- "zokrates_field",
+ "zokrates_field 0.5.2",
 ]
 
 [[package]]
