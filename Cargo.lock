@@ -818,11 +818,23 @@ dependencies = [
 
 [[package]]
 name = "blake2"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "94cb07b0da6a73955f8fb85d24c466778e70cda767a568229b104f0264089330"
+dependencies = [
+ "byte-tools",
+ "crypto-mac 0.7.0",
+ "digest 0.8.1",
+ "opaque-debug 0.2.3",
+]
+
+[[package]]
+name = "blake2"
 version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0a4e37d16930f5459780f5621038b6382b9bb37c19016f39fb6b5808d831f174"
 dependencies = [
- "crypto-mac",
+ "crypto-mac 0.8.0",
  "digest 0.9.0",
  "opaque-debug 0.3.0",
 ]
@@ -1418,7 +1430,7 @@ checksum = "ef2b4b23cddf68b89b8f8069890e8c270d54e2d5fe1b143820234805e4cb17ef"
 dependencies = [
  "generic-array 0.14.6",
  "rand_core 0.6.4",
- "subtle",
+ "subtle 2.4.1",
  "zeroize",
 ]
 
@@ -1434,12 +1446,22 @@ dependencies = [
 
 [[package]]
 name = "crypto-mac"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4434400df11d95d556bac068ddfedd482915eb18fe8bea89bc80b6e4b1c179e5"
+dependencies = [
+ "generic-array 0.12.4",
+ "subtle 1.0.0",
+]
+
+[[package]]
+name = "crypto-mac"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b584a330336237c1eecd3e94266efb216c56ed91225d634cb2991c5f3fd1aeab"
 dependencies = [
  "generic-array 0.14.6",
- "subtle",
+ "subtle 2.4.1",
 ]
 
 [[package]]
@@ -1603,7 +1625,7 @@ checksum = "8168378f4e5023e7218c89c891c0fd8ecdb5e5e4f18cb78f38cf245dd021e76f"
 dependencies = [
  "block-buffer 0.10.3",
  "crypto-common",
- "subtle",
+ "subtle 2.4.1",
 ]
 
 [[package]]
@@ -1679,7 +1701,7 @@ dependencies = [
  "pkcs8",
  "rand_core 0.6.4",
  "sec1",
- "subtle",
+ "subtle 2.4.1",
  "zeroize",
 ]
 
@@ -2245,7 +2267,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d013fc25338cc558c5c2cfbad646908fb23591e2404481826742b651c9af7160"
 dependencies = [
  "rand_core 0.6.4",
- "subtle",
+ "subtle 2.4.1",
 ]
 
 [[package]]
@@ -2781,7 +2803,7 @@ checksum = "5dfbfb3a6cfbd390d5c9564ab283a0349b9b9fcd46a706c1eb10e0db70bfbac7"
 dependencies = [
  "ff",
  "rand_core 0.6.4",
- "subtle",
+ "subtle 2.4.1",
 ]
 
 [[package]]
@@ -3865,7 +3887,7 @@ checksum = "7676374caaee8a325c9e7a2ae557f216c5563a171d6997b0ef8a65af35147700"
 dependencies = [
  "base64ct",
  "rand_core 0.6.4",
- "subtle",
+ "subtle 2.4.1",
 ]
 
 [[package]]
@@ -4108,7 +4130,7 @@ name = "poseidon"
 version = "0.1.0"
 source = "git+https://github.com/leonardoalt/Poseidon_BN128?branch=main#c38bbb2783ba6a6d05a10343ce2bde2ef0ceb60c"
 dependencies = [
- "zokrates_field",
+ "zokrates_field 0.5.2",
 ]
 
 [[package]]
@@ -4853,7 +4875,7 @@ dependencies = [
  "der",
  "generic-array 0.14.6",
  "pkcs8",
- "subtle",
+ "subtle 2.4.1",
  "zeroize",
 ]
 
@@ -5251,6 +5273,12 @@ dependencies = [
  "rand 0.8.5",
  "rustc-hex",
 ]
+
+[[package]]
+name = "subtle"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2d67a5a62ba6e01cb2192ff309324cb4875d0c451d55fe2319433abe7a05a8ee"
 
 [[package]]
 name = "subtle"
@@ -5927,10 +5955,10 @@ dependencies = [
  "trollup-wallet",
  "zokrates_abi",
  "zokrates_ark",
- "zokrates_ast",
- "zokrates_field",
+ "zokrates_ast 0.1.3",
+ "zokrates_field 0.5.2",
  "zokrates_interpreter",
- "zokrates_proof_systems",
+ "zokrates_proof_systems 0.1.0",
 ]
 
 [[package]]
@@ -5964,7 +5992,7 @@ dependencies = [
  "num-bigint 0.4.3",
  "poseidon",
  "serde",
- "zokrates_field",
+ "zokrates_field 0.5.2",
 ]
 
 [[package]]
@@ -6569,14 +6597,14 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
- "zokrates_ast",
- "zokrates_field",
+ "zokrates_ast 0.1.3",
+ "zokrates_field 0.5.2",
 ]
 
 [[package]]
 name = "zokrates_ark"
-version = "0.1.1"
-source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.3#d9006cbab88f61a3d04ec6aa6215fd05feba7acf"
+version = "0.1.2"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.4#b5f2263410dd1a70f0d6aa6a879b28b754c3fe11"
 dependencies = [
  "ark-bls12-377",
  "ark-bn254",
@@ -6595,9 +6623,9 @@ dependencies = [
  "hex",
  "rand 0.8.5",
  "sha3 0.9.1",
- "zokrates_ast",
- "zokrates_field",
- "zokrates_proof_systems",
+ "zokrates_ast 0.1.4",
+ "zokrates_field 0.5.3",
+ "zokrates_proof_systems 0.1.1",
 ]
 
 [[package]]
@@ -6614,9 +6642,26 @@ dependencies = [
  "serde",
  "serde_cbor",
  "serde_json",
- "zokrates_embed",
- "zokrates_field",
- "zokrates_pest_ast",
+ "zokrates_embed 0.1.8",
+ "zokrates_field 0.5.2",
+ "zokrates_pest_ast 0.3.0",
+]
+
+[[package]]
+name = "zokrates_ast"
+version = "0.1.4"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.4#b5f2263410dd1a70f0d6aa6a879b28b754c3fe11"
+dependencies = [
+ "cfg-if 0.1.10",
+ "csv",
+ "derivative",
+ "num-bigint 0.2.6",
+ "serde",
+ "serde_cbor",
+ "serde_json",
+ "zokrates_embed 0.1.9",
+ "zokrates_field 0.5.3",
+ "zokrates_pest_ast 0.3.1",
 ]
 
 [[package]]
@@ -6635,7 +6680,15 @@ dependencies = [
  "ark-std",
  "bellman_ce",
  "sapling-crypto_ce",
- "zokrates_field",
+ "zokrates_field 0.5.2",
+]
+
+[[package]]
+name = "zokrates_embed"
+version = "0.1.9"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.4#b5f2263410dd1a70f0d6aa6a879b28b754c3fe11"
+dependencies = [
+ "zokrates_field 0.5.3",
 ]
 
 [[package]]
@@ -6663,6 +6716,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "zokrates_field"
+version = "0.5.3"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.4#b5f2263410dd1a70f0d6aa6a879b28b754c3fe11"
+dependencies = [
+ "ark-bls12-377",
+ "ark-bls12-381",
+ "ark-bn254",
+ "ark-bw6-761",
+ "ark-ec",
+ "ark-ff",
+ "ark-serialize",
+ "bincode 0.8.0",
+ "lazy_static",
+ "num-bigint 0.2.6",
+ "num-integer",
+ "num-traits 0.2.15",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "sha2 0.8.2",
+]
+
+[[package]]
 name = "zokrates_interpreter"
 version = "0.1.1"
 source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.3#d9006cbab88f61a3d04ec6aa6215fd05feba7acf"
@@ -6673,15 +6749,24 @@ dependencies = [
  "pairing_ce",
  "serde",
  "zokrates_abi",
- "zokrates_ast",
- "zokrates_embed",
- "zokrates_field",
+ "zokrates_ast 0.1.3",
+ "zokrates_embed 0.1.8",
+ "zokrates_field 0.5.2",
 ]
 
 [[package]]
 name = "zokrates_parser"
 version = "0.3.2"
 source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.3#d9006cbab88f61a3d04ec6aa6215fd05feba7acf"
+dependencies = [
+ "pest",
+ "pest_derive",
+]
+
+[[package]]
+name = "zokrates_parser"
+version = "0.3.3"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.4#b5f2263410dd1a70f0d6aa6a879b28b754c3fe11"
 dependencies = [
  "pest",
  "pest_derive",
@@ -6696,7 +6781,19 @@ dependencies = [
  "lazy_static",
  "pest",
  "pest-ast",
- "zokrates_parser",
+ "zokrates_parser 0.3.2",
+]
+
+[[package]]
+name = "zokrates_pest_ast"
+version = "0.3.1"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.4#b5f2263410dd1a70f0d6aa6a879b28b754c3fe11"
+dependencies = [
+ "from-pest",
+ "lazy_static",
+ "pest",
+ "pest-ast",
+ "zokrates_parser 0.3.3",
 ]
 
 [[package]]
@@ -6712,8 +6809,26 @@ dependencies = [
  "rand 0.4.6",
  "regex 0.2.11",
  "serde",
- "zokrates_ast",
- "zokrates_field",
+ "zokrates_ast 0.1.3",
+ "zokrates_field 0.5.2",
+]
+
+[[package]]
+name = "zokrates_proof_systems"
+version = "0.1.1"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.4#b5f2263410dd1a70f0d6aa6a879b28b754c3fe11"
+dependencies = [
+ "blake2 0.8.1",
+ "byteorder",
+ "cfg-if 0.1.10",
+ "ethabi 17.2.0",
+ "hex",
+ "primitive-types 0.11.1",
+ "rand 0.8.5",
+ "regex 0.2.11",
+ "serde",
+ "zokrates_ast 0.1.4",
+ "zokrates_field 0.5.3",
 ]
 
 [[package]]
