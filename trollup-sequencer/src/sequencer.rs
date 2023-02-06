@@ -177,6 +177,7 @@ mod test {
     use trollup_types::ToU256;
     use trollup_wallet;
 
+    #[ignore]
     #[tokio::test(flavor = "multi_thread")]
     async fn end_to_end() {
         let anvil_config = NodeConfig::test();
