@@ -18,7 +18,7 @@ async fn main() -> anyhow::Result<()> {
             Ok(())
         }
         Subcommands::Public(public_args) => {
-            let k = trollup_wallet::new_public_key(&public_args.private_key.into());
+            let k = trollup_wallet::new_public_key(&public_args.private_key.into()).to_u256();
             println!("{k}");
             Ok(())
         }
