@@ -14,11 +14,11 @@ async fn main() -> anyhow::Result<()> {
     match opts.sub {
         Subcommands::New => {
             let k = trollup_wallet::new_private_key();
-            println!("{}", k.0.scalar_key());
+            println!("{}", k.to_string());
             Ok(())
         }
         Subcommands::Public(public_args) => {
-            let k = trollup_wallet::new_public_key(public_args.private_key.into());
+            let k = trollup_wallet::new_public_key(&public_args.private_key.into());
             println!("{k}");
             Ok(())
         }

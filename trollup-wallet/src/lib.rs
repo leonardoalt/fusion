@@ -28,6 +28,6 @@ pub fn new_private_key() -> PrivateKey {
     PrivateKey(babyjubjub_rs::new_key())
 }
 
-pub fn new_public_key(sk: PrivateKey) -> U256 {
+pub fn new_public_key(sk: &PrivateKey) -> U256 {
     U256::from_big_endian(sk.0.public().compress().as_slice())
 }

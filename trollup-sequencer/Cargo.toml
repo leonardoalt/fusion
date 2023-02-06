@@ -19,3 +19,7 @@ trollup-config = { path = "../trollup-config" }
 trollup-prover = { path = "../trollup-prover" }
 trollup-types = { path = "../trollup-types" }
 trollup-wallet = { path = "../trollup-wallet" }
+
+[dev-dependencies]
+anvil = { git = "https://github.com/foundry-rs/foundry" }
+hex = "0.4.3"
