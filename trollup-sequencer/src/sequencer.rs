@@ -240,6 +240,7 @@ mod test {
         }
 
         assert_eq!(contract.root().call().await.unwrap(), state.root());
+        println!("END TEST");
     }
 
     async fn next_trollup_txs(contract: types::Address, provider: &Provider<Http>) -> Vec<Tx> {
