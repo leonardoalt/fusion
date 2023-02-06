@@ -1,23 +1,25 @@
 use tarpc::{client, context, tokio_serde::formats::Json};
 
 use clap::{Parser, Subcommand};
-use ethers::types::{U256, U512};
+use ethers_core::types::U512;
 use num_bigint::BigInt;
 use std::net::IpAddr;
 
 use trollup_api::*;
-use trollup_types::{PrivateKey, ToU256};
+use trollup_types::ToU256;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let opts = Opts::parse();
     match opts.sub {
         Subcommands::New => {
-            new_private_key();
+            let k = trollup_wallet::new_private_key();
+            println!("{}", k.to_string());
             Ok(())
         }
         Subcommands::Public(public_args) => {
-            new_public_key(public_args.private_key);
+            let k = trollup_wallet::new_public_key(&public_args.private_key.into());
+            println!("{k}");
             Ok(())
         }
         Subcommands::Sign(sig_args) => {
@@ -33,19 +35,8 @@ async fn main() -> anyhow::Result<()> {
     }
 }
 
-fn new_private_key() {
-    let key = babyjubjub_rs::new_key();
-    println!("{}", key.scalar_key());
-}
-
-fn new_public_key(sk: String) {
-    let key: PrivateKey = sk.into();
-    let pk = U256::from_big_endian(key.0.public().compress().as_slice());
-    println!("{pk}");
-}
-
 fn sign(sig_args: CLITx) -> anyhow::Result<U512> {
-    trollup_signature::sign(&sig_args.clone().into(), sig_args.private_key.unwrap())
+    trollup_wallet::sign(&sig_args.clone().into(), sig_args.private_key.unwrap())
 }
 
 async fn send(send_args: CLITx) -> anyhow::Result<()> {
@@ -58,7 +49,7 @@ async fn send(send_args: CLITx) -> anyhow::Result<()> {
         }
     };
 
-    trollup_signature::verify_tx_signature(&signed)?;
+    trollup_wallet::verify_tx_signature(&signed)?;
 
     let server_addr = (IpAddr::V4(SOCKET_ADDRESS.parse().unwrap()), SOCKET_PORT);
     let transport = tarpc::serde_transport::tcp::connect(server_addr, Json::default);
@@ -74,7 +65,7 @@ async fn send(send_args: CLITx) -> anyhow::Result<()> {
 }
 
 fn verify(args: CLITx) {
-    trollup_signature::verify_tx_signature(&args.into()).unwrap();
+    trollup_wallet::verify_tx_signature(&args.into()).unwrap();
 }
 
 impl From<CLITx> for Tx {

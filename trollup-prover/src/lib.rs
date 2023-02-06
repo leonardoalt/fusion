@@ -6,7 +6,6 @@ use crate::merkle_tree::ToBitmap;
 use crate::state::{Account, State};
 
 use trollup_l1::trollup;
-use trollup_signature::hash_tx;
 use trollup_types::{
     FromBabyJubjubPoint, Point, PublicKey, ToBabyJubjubPoint, ToBabyJubjubSignature, ToU256,
 };
@@ -113,7 +112,7 @@ impl From<trollup_api::SignedTx> for CircuitTxSignature {
     fn from(tx: trollup_api::SignedTx) -> CircuitTxSignature {
         let pk = tx.tx.sender.to_babyjubjub_point();
         let sig = tx.signature.to_babyjubjub_signature();
-        let msg = hash_tx(&tx.tx);
+        let msg = trollup_api::hash_tx(&tx.tx);
 
         CircuitTxSignature {
             r: Point::from_babyjubjub_point(&sig.r_b8),

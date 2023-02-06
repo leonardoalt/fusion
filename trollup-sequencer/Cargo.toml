@@ -15,7 +15,11 @@ tarpc = { version = "0.31", features = ["full"] }
 tokio = { version = "1.25.0", features = ["macros", "sync"] }
 trollup-l1 = { path = "../l1-verifier/out/bindings" }
 trollup-api = { path = "../trollup-api" }
-trollup-prover = { path = "../trollup-prover" }
-trollup-signature = { path = "../trollup-signature" }
-trollup-types = { path = "../trollup-types" }
 trollup-config = { path = "../trollup-config" }
+trollup-prover = { path = "../trollup-prover" }
+trollup-types = { path = "../trollup-types" }
+trollup-wallet = { path = "../trollup-wallet" }
+
+[dev-dependencies]
+anvil = { git = "https://github.com/foundry-rs/foundry" }
+hex = "0.4.3"

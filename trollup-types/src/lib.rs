@@ -1,9 +1,11 @@
 use ethers_core::types::{U256, U512};
+use ff::PrimeField;
 use num_bigint::{
     BigInt,
     Sign::{NoSign, Plus},
 };
 use serde::{Deserialize, Serialize};
+use std::string::ToString;
 use zokrates_field::{Bn128Field, Field};
 
 /// The Trollup private key.
@@ -23,6 +25,12 @@ impl From<U256> for PrivateKey {
     }
 }
 
+impl ToString for PrivateKey {
+    fn to_string(&self) -> String {
+        U256::from_big_endian(&self.0.key).to_string()
+    }
+}
+
 /// The Trollup public key.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PublicKey(pub Point);
@@ -30,6 +38,10 @@ pub struct PublicKey(pub Point);
 impl PublicKey {
     pub fn address(&self) -> U256 {
         self.to_bn128_field().to_u256()
+    }
+
+    pub fn from_point(x: U256, y: U256) -> Self {
+        Self(Point { x, y })
     }
 }
 
@@ -64,8 +76,30 @@ impl FromBabyJubjubPoint for Point {
     }
 }
 
+pub trait ToBabyJubjubPoint {
+    fn to_babyjubjub_point(&self) -> babyjubjub_rs::Point;
+}
+
+impl ToBabyJubjubPoint for U256 {
+    fn to_babyjubjub_point(&self) -> babyjubjub_rs::Point {
+        let mut bytes = vec![0; 32];
+        self.to_big_endian(&mut bytes);
+        babyjubjub_rs::decompress_point(bytes.try_into().unwrap()).unwrap()
+    }
+}
+
 pub trait ToU256 {
     fn to_u256(&self) -> U256;
+}
+
+impl ToU256 for PublicKey {
+    fn to_u256(&self) -> U256 {
+        let bp = babyjubjub_rs::Point {
+            x: babyjubjub_rs::Fr::from_str(&self.0.x.to_string()).unwrap(),
+            y: babyjubjub_rs::Fr::from_str(&self.0.y.to_string()).unwrap(),
+        };
+        U256::from_big_endian(bp.compress().as_slice())
+    }
 }
 
 impl ToU256 for Bn128Field {
@@ -129,17 +163,5 @@ impl ToBabyJubjubSignature for U512 {
         let mut bytes = vec![0; 64];
         self.to_little_endian(&mut bytes);
         babyjubjub_rs::decompress_signature(bytes.as_slice().try_into().unwrap()).unwrap()
-    }
-}
-
-pub trait ToBabyJubjubPoint {
-    fn to_babyjubjub_point(&self) -> babyjubjub_rs::Point;
-}
-
-impl ToBabyJubjubPoint for U256 {
-    fn to_babyjubjub_point(&self) -> babyjubjub_rs::Point {
-        let mut bytes = vec![0; 32];
-        self.to_big_endian(&mut bytes);
-        babyjubjub_rs::decompress_point(bytes.try_into().unwrap()).unwrap()
     }
 }

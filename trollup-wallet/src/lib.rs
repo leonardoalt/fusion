@@ -1,10 +1,7 @@
 use ethers_core::types::{U256, U512};
 
-use trollup_api::{SignedTx, Tx};
-use trollup_types::{
-    FromBabyJubjubPoint, PrivateKey, PublicKey, ToBabyJubjubPoint, ToBabyJubjubSignature, ToBigInt,
-    ToBn128Field, ToU256,
-};
+use trollup_api::{hash_tx, SignedTx, Tx};
+use trollup_types::{PrivateKey, ToBabyJubjubPoint, ToBabyJubjubSignature, ToBigInt};
 
 pub fn sign(tx: &Tx, private_key: String) -> anyhow::Result<U512> {
     let wallet: PrivateKey = private_key.into();
@@ -16,21 +13,6 @@ pub fn sign(tx: &Tx, private_key: String) -> anyhow::Result<U512> {
     }
 }
 
-pub fn hash_tx(tx: &Tx) -> U256 {
-    let sender_pk = PublicKey::from_babyjubjub_point(&tx.sender.to_babyjubjub_point());
-    let to_pk = PublicKey::from_babyjubjub_point(&tx.sender.to_babyjubjub_point());
-    poseidon::hash_BN_128(
-        [
-            sender_pk.to_bn128_field(),
-            to_pk.to_bn128_field(),
-            tx.nonce.to_bn128_field(),
-            tx.value.to_bn128_field(),
-        ]
-        .to_vec(),
-    )
-    .to_u256()
-}
-
 pub fn verify_tx_signature(tx: &SignedTx) -> anyhow::Result<()> {
     let pk = tx.tx.sender.to_babyjubjub_point();
     let sig = tx.signature.to_babyjubjub_signature();
@@ -40,4 +22,12 @@ pub fn verify_tx_signature(tx: &SignedTx) -> anyhow::Result<()> {
         true => Ok(()),
         false => Err(anyhow::anyhow!("Invalid signature.")),
     }
+}
+
+pub fn new_private_key() -> PrivateKey {
+    PrivateKey(babyjubjub_rs::new_key())
+}
+
+pub fn new_public_key(sk: &PrivateKey) -> U256 {
+    U256::from_big_endian(sk.0.public().compress().as_slice())
 }
