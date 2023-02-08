@@ -1,12 +1,12 @@
 use ethers_core::types::{U256, U512};
-use ff::PrimeField;
+use ff::*;
 use num_bigint::{
     BigInt,
     Sign::{NoSign, Plus},
 };
+use poseidon_rs::*;
 use serde::{Deserialize, Serialize};
 use std::string::ToString;
-use zokrates_field::{Bn128Field, Field};
 
 /// The Trollup private key.
 /// It simply wraps a Baby Jubjub private key.
@@ -54,7 +54,7 @@ pub struct PublicKey(pub Point);
 
 impl PublicKey {
     pub fn address(&self) -> U256 {
-        self.to_bn128_field().to_u256()
+        self.to_fr().to_u256()
     }
 
     pub fn from_point(x: U256, y: U256) -> Self {
@@ -126,11 +126,9 @@ impl ToU256 for PublicKey {
     }
 }
 
-impl ToU256 for Bn128Field {
+impl ToU256 for Fr {
     fn to_u256(&self) -> U256 {
-        let mut bytes: [u8; 32] = self.to_byte_vector().try_into().unwrap();
-        bytes.reverse();
-        bytes.into()
+        U256::from_str_radix(&ff::to_hex(self), 16).unwrap()
     }
 }
 
@@ -142,25 +140,25 @@ impl ToU256 for BigInt {
     }
 }
 
-pub trait ToBn128Field {
-    fn to_bn128_field(&self) -> Bn128Field;
+pub trait ToFr {
+    fn to_fr(&self) -> Fr;
 }
 
 /// Computes a single field element which represents the
 /// address of a public key.
-impl ToBn128Field for PublicKey {
-    fn to_bn128_field(&self) -> Bn128Field {
-        poseidon::hash_BN_128(vec![self.0.x.to_bn128_field(), self.0.y.to_bn128_field()])
+impl ToFr for PublicKey {
+    fn to_fr(&self) -> Fr {
+        Poseidon::new()
+            .hash(vec![self.0.x.to_fr(), self.0.y.to_fr()])
+            .unwrap()
     }
 }
 
 /// Converts a U256 into a field element.
 /// Panics if it does not fit.
-impl ToBn128Field for U256 {
-    fn to_bn128_field(&self) -> Bn128Field {
-        let mut n_bytes = vec![0; 32];
-        self.to_little_endian(&mut n_bytes);
-        Bn128Field::from_byte_vector(n_bytes)
+impl ToFr for U256 {
+    fn to_fr(&self) -> Fr {
+        Fr::from_str(&self.to_string()).unwrap()
     }
 }
 
@@ -251,9 +249,13 @@ mod test {
     fn u256_conversion() {
         let x = U256::from_dec_str("42").unwrap();
         let y = x.to_big_int();
-        let z = x.to_bn128_field();
-        assert_eq!(y.to_string(), x.to_string());
-        assert_eq!(y.to_string(), z.to_string());
+        assert_eq!(x.to_string(), y.to_string());
+    }
+
+    #[test]
+    fn u256_fr_conversion() {
+        let x = U256::from_dec_str("42").unwrap();
+        assert_eq!(x, x.to_fr().to_u256());
     }
 
     #[test]

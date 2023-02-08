@@ -1,33 +1,27 @@
 use crate::merkle_tree::Hasher;
 
 use ethers_core::types::U256;
-use poseidon::*;
-use zokrates_field::Bn128Field;
+use poseidon_rs::*;
 
-use trollup_types::ToU256;
+use trollup_types::{ToFr, ToU256};
+
+pub fn poseidon(args: &[U256]) -> U256 {
+    Poseidon::new()
+        .hash(args.iter().map(|a| a.to_fr()).collect())
+        .unwrap()
+        .to_u256()
+}
 
 #[derive(Default, Clone)]
-pub struct PoseidonHasher(Vec<Bn128Field>);
+pub struct PoseidonHasher(Vec<Fr>);
 
 impl Hasher for PoseidonHasher {
     fn write_h256(&mut self, w: &U256) {
-        self.0.push(w.to_bn128_field())
+        self.0.push(w.to_fr())
     }
 
     fn finish(self) -> U256 {
-        poseidon::hash_BN_128(self.0).to_u256()
-    }
-}
-
-pub trait ToBn128Field {
-    fn to_bn128_field(&self) -> Bn128Field;
-}
-
-impl ToBn128Field for U256 {
-    fn to_bn128_field(&self) -> Bn128Field {
-        let mut n_bytes = vec![0; 32];
-        self.to_little_endian(&mut n_bytes);
-        Bn128Field::from_byte_vector(n_bytes)
+        Poseidon::new().hash(self.0).unwrap().to_u256()
     }
 }
 
