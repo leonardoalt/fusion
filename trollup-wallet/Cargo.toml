@@ -14,4 +14,5 @@ num-bigint = "0.4.3"
 tarpc = { version = "0.31", features = ["full"] }
 tokio = { version = "1.25.0", features = ["full"] }
 trollup-api = { path = "../trollup-api" }
+trollup-config = { path = "../trollup-config" }
 trollup-types = { path = "../trollup-types" }
