@@ -6,9 +6,7 @@ use crate::merkle_tree::ToBitmap;
 use crate::state::{Account, State};
 
 use trollup_l1::trollup;
-use trollup_types::{
-    FromBabyJubjubPoint, Point, PublicKey, ToBabyJubjubPoint, ToBabyJubjubSignature, ToU256,
-};
+use trollup_types::{FromBabyJubjubPoint, Point, PublicKey, ToBabyJubjubSignature, ToU256};
 
 use bitmaps::Bitmap;
 
@@ -104,21 +102,14 @@ impl ToCircuitTx for trollup_api::SignedTx {
 struct CircuitTxSignature {
     r: Point,
     s: U256,
-    a: Point,
-    m: U256,
 }
 
 impl From<trollup_api::SignedTx> for CircuitTxSignature {
     fn from(tx: trollup_api::SignedTx) -> CircuitTxSignature {
-        let pk = tx.tx.sender.to_babyjubjub_point();
         let sig = tx.signature.to_babyjubjub_signature();
-        let msg = trollup_api::hash_tx(&tx.tx);
-
         CircuitTxSignature {
             r: Point::from_babyjubjub_point(&sig.r_b8),
             s: sig.s.to_u256(),
-            a: Point::from_babyjubjub_point(&pk),
-            m: msg,
         }
     }
 }
@@ -225,7 +216,7 @@ impl Prover {
 trait ToTrollupL1 {
     fn to_trollup_l1_tx(&self) -> trollup::TxProof;
     fn to_trollup_l1_proof(&self) -> trollup::Proof;
-    fn to_trollup_l1_input(&self) -> [U256; 20usize];
+    fn to_trollup_l1_input(&self) -> [U256; 17usize];
 }
 
 impl ToTrollupL1 for Proof<Bn128Field, G16> {
@@ -262,8 +253,8 @@ impl ToTrollupL1 for Proof<Bn128Field, G16> {
         }
     }
 
-    fn to_trollup_l1_input(&self) -> [U256; 20usize] {
-        assert_eq!(self.inputs.len(), 20);
+    fn to_trollup_l1_input(&self) -> [U256; 17usize] {
+        assert_eq!(self.inputs.len(), 17);
         self.inputs
             .iter()
             .map(|x| U256::from_str_radix(&x[2..], 16).unwrap())

@@ -31,7 +31,7 @@ contract Trollup is Verifier {
     }
 
     function verifyTx(TxProof memory l2Tx) internal view {
-        if (l2Tx.input.length != 20) {
+        if (l2Tx.input.length != 17) {
             revert InvalidInputLength();
         }
 
