@@ -5914,6 +5914,7 @@ dependencies = [
  "serde_json",
  "serde_tuple",
  "trollup-api",
+ "trollup-config",
  "trollup-l1",
  "trollup-types",
  "trollup-wallet",
