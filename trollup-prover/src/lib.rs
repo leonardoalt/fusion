@@ -5,6 +5,7 @@ pub mod state;
 use crate::merkle_tree::ToBitmap;
 use crate::state::{Account, State};
 
+use trollup_config::*;
 use trollup_l1::trollup;
 use trollup_types::{FromBabyJubjubPoint, Point, PublicKey, ToBabyJubjubSignature, ToU256};
 
@@ -118,11 +119,12 @@ pub struct Prover;
 
 impl Prover {
     pub fn prove(
+        config: &Config,
         tx: &trollup_api::SignedTx,
         pre_state: &State,
         post_state: &State,
     ) -> Result<trollup::TxProof, String> {
-        let path = Path::new("../circuits/out");
+        let path = Path::new(&config.circuit_path);
         let file = File::open(path)
             .map_err(|why| format!("Could not open {}: {}", path.display(), why))?;
 
@@ -134,9 +136,9 @@ impl Prover {
         };
         let prog = prog.collect();
 
-        let witness = Self::compute_witness(prog.clone(), tx, pre_state, post_state)?;
+        let witness = Self::compute_witness(config, prog.clone(), tx, pre_state, post_state)?;
 
-        let pk_path = Path::new("../circuits/proving.key");
+        let pk_path = Path::new(&config.proving_key_path);
         let pk_file = File::open(pk_path)
             .map_err(|why| format!("Could not open {}: {}", pk_path.display(), why))?;
 
@@ -162,13 +164,14 @@ impl Prover {
     }
 
     fn compute_witness<I: IntoIterator<Item = ir::Statement<Bn128Field>>>(
+        config: &Config,
         prog: ir::ProgIterator<Bn128Field, I>,
         tx: &trollup_api::SignedTx,
         pre_state: &State,
         post_state: &State,
     ) -> Result<Witness<Bn128Field>, String> {
         let signature = {
-            let path = Path::new("../circuits/abi.json");
+            let path = Path::new(&config.circuit_abi_path);
             let file = File::open(path)
                 .map_err(|why| format!("Could not open {}: {}", path.display(), why))?;
             let mut reader = BufReader::new(file);

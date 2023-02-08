@@ -21,5 +21,6 @@ zokrates_interpreter = { git = "https://github.com/ZoKrates/ZoKrates", tag = "0.
 zokrates_proof_systems = { git = "https://github.com/ZoKrates/ZoKrates", tag = "0.8.3" }
 trollup-l1 = { path = "../l1-verifier/out/bindings" }
 trollup-api = { path = "../trollup-api" }
+trollup-config = { path = "../trollup-config" }
 trollup-wallet = { path = "../trollup-wallet" }
 trollup-types = { path = "../trollup-types" }

@@ -5,6 +5,9 @@ use std::path::PathBuf;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Config {
+    pub circuit_path: String,
+    pub circuit_abi_path: String,
+    pub proving_key_path: String,
     pub database_path: String,
     pub eth_rpc_url: String,
     pub eth_private_key: String,
@@ -24,6 +27,9 @@ impl Config {
 impl Default for Config {
     fn default() -> Self {
         Config {
+            circuit_path: "../circuits/out".to_string(),
+            circuit_abi_path: "../circuits/abi.json".to_string(),
+            proving_key_path: "../circuits/proving.key".to_string(),
             database_path: "./db".to_string(),
             eth_rpc_url: "http://localhost:8545".to_string(),
             eth_private_key: String::default(),

@@ -22,11 +22,12 @@ use crate::node::*;
 type MemPool = Arc<Mutex<Vec<SignedTx>>>;
 
 async fn request_proof(
+    config: Config,
     tx: SignedTx,
     pre_state: State,
     post_state: State,
 ) -> anyhow::Result<trollup::TxProof, String> {
-    Prover::prove(&tx, &pre_state, &post_state)
+    Prover::prove(&config, &tx, &pre_state, &post_state)
 }
 
 pub async fn run_sequencer(
@@ -70,6 +71,7 @@ pub async fn run_sequencer(
         let mut tasks = vec![];
         states.windows(2).zip(txs.iter()).for_each(|(states, tx)| {
             tasks.push(tokio::spawn(request_proof(
+                config.clone(),
                 tx.clone(),
                 states[0].clone(),
                 states[1].clone(),
