@@ -36,3 +36,31 @@ pub struct SignedTx {
 pub trait TrollupRPC {
     async fn submit_transaction(tx: SignedTx) -> String;
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn hash() {
+        let tx = Tx {
+            sender: U256::from_dec_str(
+                "11693830015789570214896451416834991706586932551962432904221523856506008194081",
+            )
+            .unwrap(),
+            to: U256::from_dec_str(
+                "11693830015789570214896451416834991706586932551962432904221523856506008194081",
+            )
+            .unwrap(),
+            nonce: 0.into(),
+            value: 0.into(),
+        };
+        assert_eq!(
+            hash_tx(&tx),
+            U256::from_dec_str(
+                "7024706519851959073508005968462078426943949097906904873031507538622023544211"
+            )
+            .unwrap()
+        );
+    }
+}
