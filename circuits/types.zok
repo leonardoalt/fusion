@@ -7,13 +7,11 @@ struct Point {
 
 /// R: Curve point
 /// S: Field element. Signature to be verified.
-/// A: Curve point. Public part of the key used to create S.
-/// M: Message hashed with Poseidon
+/// The public key `a` should be taken from tx.sender.
+/// The message `m` should be the hash of the transaction.
 struct Signature {
 	Point r;
 	field s;
-	Point a;
-	field m;
 }
 
 struct Tx {

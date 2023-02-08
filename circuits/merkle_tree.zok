@@ -14,7 +14,7 @@ def merge(field v0, field v1) -> field {
 	} else { if v1 == 0 {
 		v0
 	} else {
-		hash::<2>([v0, v1])
+		hash([v0, v1])
 	}}};
 }
 
@@ -22,7 +22,7 @@ def hash_leaf(Account acc) -> field {
 	return if acc.balance == 0 && acc.nonce == 0 {
 		0
 	} else {
-		hash::<2>([acc.id, hash::<2>([acc.balance, acc.nonce])])
+		hash([acc.id, hash([acc.balance, acc.nonce])])
 	};
 }
 
@@ -48,8 +48,8 @@ def main(field preRoot, field postRoot, Tx tx, Account[2] preAccounts, bool[2][D
 	}
 
 	/* Apply tx changes */
-	assert(hash::<2>([tx.sender.x, tx.sender.y]) == preAccounts[0].id);
-	assert(hash::<2>([tx.to.x, tx.to.y]) == preAccounts[1].id);
+	assert(hash([tx.sender.x, tx.sender.y]) == preAccounts[0].id);
+	assert(hash([tx.to.x, tx.to.y]) == preAccounts[1].id);
 
 	assert(preAccounts[0].balance >= tx.value);
 	assert(preAccounts[0].nonce < tx.nonce);

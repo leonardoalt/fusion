@@ -13,7 +13,7 @@ pub struct Tx {
 
 pub fn hash_tx(tx: &Tx) -> U256 {
     let sender_pk = PublicKey::from_babyjubjub_point(&tx.sender.to_babyjubjub_point());
-    let to_pk = PublicKey::from_babyjubjub_point(&tx.sender.to_babyjubjub_point());
+    let to_pk = PublicKey::from_babyjubjub_point(&tx.to.to_babyjubjub_point());
     poseidon::hash_BN_128(
         [
             sender_pk.to_bn128_field(),
