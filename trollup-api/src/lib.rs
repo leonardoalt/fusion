@@ -34,7 +34,7 @@ pub struct SignedTx {
 
 #[tarpc::service]
 pub trait TrollupRPC {
-    async fn submit_transaction(tx: SignedTx) -> String;
+    async fn submit_transaction(tx: SignedTx) -> Result<(), String>;
 }
 
 #[cfg(test)]

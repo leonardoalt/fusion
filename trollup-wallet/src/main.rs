@@ -60,12 +60,11 @@ async fn send(send_args: CLITx, config: &Config) -> anyhow::Result<()> {
     );
     let transport = tarpc::serde_transport::tcp::connect(server_addr, Json::default);
     let client = TrollupRPCClient::new(client::Config::default(), transport.await?).spawn();
-    let tx_receipt = client
+    client
         .submit_transaction(context::current(), signed)
         .await
+        .unwrap()
         .unwrap();
-
-    println!("{tx_receipt}");
 
     Ok(())
 }
