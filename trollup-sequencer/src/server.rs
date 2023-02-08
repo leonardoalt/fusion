@@ -16,10 +16,13 @@ struct TrollupServer(SocketAddr, mpsc::Sender<SignedTx>);
 
 #[tarpc::server]
 impl TrollupRPC for TrollupServer {
-    async fn submit_transaction(self, _: context::Context, tx: trollup_api::SignedTx) -> String {
+    async fn submit_transaction(
+        self,
+        _: context::Context,
+        tx: trollup_api::SignedTx,
+    ) -> Result<(), String> {
         self.1.send(tx.clone()).await.unwrap();
-
-        "Ok".to_string()
+        Ok(())
     }
 }
 
