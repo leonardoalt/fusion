@@ -4104,14 +4104,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ac9a59f73473f1b8d852421e59e64809f025994837ef743615c6d0c5b305160"
 
 [[package]]
-name = "poseidon"
-version = "0.1.0"
-source = "git+https://github.com/leonardoalt/Poseidon_BN128?branch=main#c38bbb2783ba6a6d05a10343ce2bde2ef0ceb60c"
-dependencies = [
- "zokrates_field",
-]
-
-[[package]]
 name = "poseidon-rs"
 version = "0.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5887,7 +5879,7 @@ name = "trollup-api"
 version = "0.1.0"
 dependencies = [
  "ethers-core",
- "poseidon",
+ "poseidon-rs",
  "serde",
  "tarpc",
  "trollup-types",
@@ -5917,7 +5909,7 @@ dependencies = [
  "babyjubjub-rs",
  "bitmaps",
  "ethers-core",
- "poseidon",
+ "poseidon-rs",
  "serde",
  "serde_json",
  "serde_tuple",
@@ -5962,9 +5954,8 @@ dependencies = [
  "ethers-core",
  "ff_ce 0.11.0",
  "num-bigint 0.4.3",
- "poseidon",
+ "poseidon-rs",
  "serde",
- "zokrates_field",
 ]
 
 [[package]]

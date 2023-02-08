@@ -8,8 +8,7 @@ edition = "2021"
 [dependencies]
 babyjubjub-rs = { git = "https://github.com/leonardoalt/babyjubjub-rs" }
 ethers-core = { git = "https://github.com/gakonst/ethers-rs" }
-ff = {package="ff_ce" , version= "0.11", features = ["derive"]}
+ff = { package="ff_ce" , version= "0.11", features = ["derive"] }
 num-bigint = "0.4.3"
-poseidon = { git = "https://github.com/leonardoalt/Poseidon_BN128", branch = "main" }
-zokrates_field = { git = "https://github.com/ZoKrates/ZoKrates", tag = "0.8.3" }
+poseidon-rs = "0.0.8"
 serde = "1.0.152"

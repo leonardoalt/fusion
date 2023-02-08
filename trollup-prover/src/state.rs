@@ -1,7 +1,5 @@
 use crate::merkle_tree::{MerkleTree, Value};
-use crate::poseidon_hasher::{PoseidonHasher, ToBn128Field};
-
-use trollup_types::ToU256;
+use crate::poseidon_hasher::{poseidon, PoseidonHasher};
 
 use ethers_core::types::U256;
 use serde::{Deserialize, Serialize};
@@ -51,11 +49,7 @@ impl Value for Account {
             return 0.into();
         }
 
-        poseidon::hash_BN_128(vec![
-            self.balance.to_bn128_field(),
-            self.nonce.to_bn128_field(),
-        ])
-        .to_u256()
+        poseidon(&[self.balance, self.nonce])
     }
 
     fn zero() -> Self {

@@ -1,7 +1,7 @@
 use ethers_core::types::U256;
+use poseidon_rs::*;
 use serde::{Deserialize, Serialize};
-
-use trollup_types::{FromBabyJubjubPoint, PublicKey, ToBabyJubjubPoint, ToBn128Field, ToU256};
+use trollup_types::{FromBabyJubjubPoint, PublicKey, ToBabyJubjubPoint, ToFr, ToU256};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Tx {
@@ -14,16 +14,18 @@ pub struct Tx {
 pub fn hash_tx(tx: &Tx) -> U256 {
     let sender_pk = PublicKey::from_babyjubjub_point(&tx.sender.to_babyjubjub_point());
     let to_pk = PublicKey::from_babyjubjub_point(&tx.to.to_babyjubjub_point());
-    poseidon::hash_BN_128(
-        [
-            sender_pk.to_bn128_field(),
-            to_pk.to_bn128_field(),
-            tx.nonce.to_bn128_field(),
-            tx.value.to_bn128_field(),
-        ]
-        .to_vec(),
-    )
-    .to_u256()
+    Poseidon::new()
+        .hash(
+            [
+                sender_pk.to_fr(),
+                to_pk.to_fr(),
+                tx.nonce.to_fr(),
+                tx.value.to_fr(),
+            ]
+            .to_vec(),
+        )
+        .unwrap()
+        .to_u256()
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
