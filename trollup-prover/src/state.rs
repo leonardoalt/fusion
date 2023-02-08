@@ -88,6 +88,13 @@ mod tests {
         assert_eq!(acc.id, 0.into());
         assert_eq!(acc.balance, 42.into());
         assert_eq!(acc.nonce, 1.into());
+        assert_eq!(
+            s.root(),
+            U256::from_dec_str(
+                "11451511948541742621487323918061834032674352303614210053651560948921266760133"
+            )
+            .unwrap()
+        );
     }
 
     #[test]
@@ -116,14 +123,15 @@ mod tests {
         s.update(&1.into(), acc1.clone());
         s.update(&2.into(), acc2.clone());
 
-        println!("Leaf 0 = {:?}", acc0.to_u256());
-        println!("Leaf 1 = {:?}", acc1.to_u256());
-        println!("Leaf 2 = {:?}", acc2.to_u256());
-
         let proof = s.proof(&0.into());
         assert_eq!(proof.len(), 256);
 
-        println!("Root is {:?}", s.root());
-        println!("Proof is {proof:?}");
+        assert_eq!(
+            s.root(),
+            U256::from_dec_str(
+                "10530429052483355307531639547793752128181067498703038350353566076039804625754"
+            )
+            .unwrap()
+        );
     }
 }

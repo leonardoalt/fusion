@@ -28,9 +28,9 @@ jobs:
     - name: Install dependencies
       run: rustup component add clippy rustfmt
     - name: Build
-      run: cargo build --release --verbose
+      run: cargo build
     - name: Run tests
-      run: cargo test --release --verbose -- --nocapture
+      run: cargo test
     - name: Lint
       run: cargo clippy --all --all-features -- -D warnings
     - name: Format

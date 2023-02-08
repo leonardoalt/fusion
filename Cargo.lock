@@ -5979,6 +5979,7 @@ dependencies = [
  "tarpc",
  "tokio",
  "trollup-api",
+ "trollup-config",
  "trollup-types",
 ]
 

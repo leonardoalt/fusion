@@ -30,3 +30,22 @@ impl ToBn128Field for U256 {
         Bn128Field::from_byte_vector(n_bytes)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn hasher() {
+        let mut hasher = PoseidonHasher::default();
+        hasher.write_h256(&0.into());
+        hasher.write_h256(&1.into());
+        assert_eq!(
+            hasher.finish(),
+            U256::from_dec_str(
+                "12583541437132735734108669866114103169564651237895298778035846191048104863326"
+            )
+            .unwrap()
+        );
+    }
+}
