@@ -18,24 +18,60 @@ use serde::{Deserialize, Serialize};
 use serde_json::from_reader;
 use serde_tuple::*;
 
-use rand_0_8::rngs::StdRng;
-use rand_0_8::SeedableRng;
-
-use zokrates_abi::{parse_strict, Encode, Inputs};
-use zokrates_ark::Ark;
-use zokrates_ast::ir::{self, Parameter, ProgEnum, Solver, Witness};
+use zokrates_abi::parse_value;
+use zokrates_abi::Encode;
+use zokrates_ast::ir::ProgEnum;
 use zokrates_ast::typed::abi::Abi;
-use zokrates_field::Bn128Field;
-use zokrates_proof_systems::*;
+use zokrates_bellperson::nova;
+use zokrates_field::PallasField;
 
-use std::borrow::Borrow;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
 
 #[derive(Serialize_tuple, Deserialize_tuple, Debug)]
-pub struct CircuitInput {
-    pre_root: U256,
+pub struct CircuitInputNova {
+    state: NovaState,
+    w: NovaWitness,
+}
+
+impl CircuitInputNova {
+    pub fn new(tx: &SignedTx, pre_state: &State, post_state: &State) -> Self {
+        Self {
+            state: NovaState::from_state(pre_state),
+            w: NovaWitness::new(tx, pre_state, post_state),
+        }
+    }
+}
+
+trait ToVecBool {
+    fn to_vec_bool(&self) -> Vec<bool>;
+}
+
+impl ToVecBool for Bitmap<256> {
+    fn to_vec_bool(&self) -> Vec<bool> {
+        let mut v: Vec<bool> = vec![];
+        (0..256).for_each(|b| {
+            v.push(self.get(b));
+        });
+        v
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct NovaState {
+    root: U256,
+}
+
+impl NovaState {
+    fn from_state(s: &State) -> Self {
+        Self { root: s.root() }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct NovaWitness {
     post_root: U256,
     tx: CircuitTx,
     pre_accounts: Vec<Account>,
@@ -44,7 +80,7 @@ pub struct CircuitInput {
     post_path: Vec<Vec<U256>>,
 }
 
-impl CircuitInput {
+impl NovaWitness {
     pub fn new(tx: &SignedTx, pre_state: &State, post_state: &State) -> Self {
         let circuit_tx = tx.to_circuit_tx();
 
@@ -62,7 +98,6 @@ impl CircuitInput {
         };
 
         Self {
-            pre_root: pre_state.root(),
             tx: circuit_tx,
             pre_accounts: vec![pre_account_from, pre_account_to],
             post_root: post_state.root(),
@@ -73,20 +108,6 @@ impl CircuitInput {
             pre_path: vec![pre_state.proof(&sender_addr), pre_state.proof(&to_addr)],
             post_path: vec![post_state.proof(&sender_addr), post_state.proof(&to_addr)],
         }
-    }
-}
-
-trait ToVecBool {
-    fn to_vec_bool(&self) -> Vec<bool>;
-}
-
-impl ToVecBool for Bitmap<256> {
-    fn to_vec_bool(&self) -> Vec<bool> {
-        let mut v: Vec<bool> = vec![];
-        (0..256).for_each(|b| {
-            v.push(self.get(b));
-        });
-        v
     }
 }
 
@@ -114,7 +135,14 @@ impl ToCircuitTx for fusion_api::SignedTx {
             to: to_pk.0,
             nonce: self.tx.nonce,
             value: self.tx.value,
-            sig: self.clone().into(),
+            // TODO fix this when we have Nova with BN
+            sig: CircuitTxSignature {
+                r: Point {
+                    x: 0.into(),
+                    y: 0.into(),
+                },
+                s: 0.into(),
+            },
         }
     }
 }
@@ -143,7 +171,7 @@ impl Prover {
         tx: &fusion_api::SignedTx,
         pre_state: &State,
         post_state: &State,
-    ) -> Result<fusion::TxProof, String> {
+    ) -> Result<(fusion::Proof, fusion::TxInfo), String> {
         let path = Path::new(&config.circuit_path);
         let file = File::open(path)
             .map_err(|why| format!("Could not open {}: {}", path.display(), why))?;
@@ -151,149 +179,170 @@ impl Prover {
         let mut reader = BufReader::new(file);
 
         let prog = match ProgEnum::deserialize(&mut reader).unwrap() {
-            ProgEnum::Bn128Program(p) => p,
+            ProgEnum::PallasProgram(p) => p,
             _ => panic!(),
         };
         let prog = prog.collect();
 
-        let witness = Self::compute_witness(
-            config,
-            prog.statements.iter(),
-            &prog.arguments,
-            &prog.solvers,
-            tx,
-            pre_state,
-            post_state,
-        )?;
+        let path = Path::new("../circuits/abi.json");
+        let file = File::open(path)
+            .map_err(|why| format!("Could not open {}: {}", path.display(), why))?;
+        let mut reader = BufReader::new(file);
 
-        let pk_path = Path::new(&config.proving_key_path);
-        let pk_file = File::open(pk_path)
-            .map_err(|why| format!("Could not open {}: {}", pk_path.display(), why))?;
+        let abi: Abi = from_reader(&mut reader).map_err(|why| why.to_string())?;
 
-        let pk_reader = BufReader::new(pk_file);
+        let signature = abi.signature();
 
-        let mut rng = StdRng::from_entropy();
-        let proof: Proof<Bn128Field, G16> = Ark::generate_proof(prog, witness, pk_reader, &mut rng);
-        let ret = proof.to_fusion_l1_tx();
+        let init_type = signature.inputs[0].clone();
+        let step_type = signature.inputs[1].clone();
 
-        /*
-        let proof = serde_json::to_string_pretty(&TaggedProof::<Bn128Field, G16>::new(
-            proof.proof,
-            proof.inputs,
-        ))
-        .unwrap();
-        println!("Proof:\n{proof}");
-        */
+        println!("Encoding initial state...");
 
-        Ok(ret)
+        let init = parse_value::<PallasField>(
+            serde_json::from_str(
+                &serde_json::to_string(&NovaState::from_state(pre_state)).unwrap(),
+            )
+            .unwrap(),
+            init_type,
+        )
+        .unwrap()
+        .encode();
+
+        println!("Encoding witness list...");
+
+        let witness = NovaWitness::new(tx, pre_state, post_state);
+        let steps: Vec<_> = vec![parse_value::<PallasField>(
+            serde_json::from_str(&serde_json::to_string(&witness).unwrap()).unwrap(),
+            step_type,
+        )
+        .unwrap()
+        .encode()];
+
+        println!("Reading parameters...");
+
+        let params_path = Path::new("../circuits/nova.params");
+        let params_file = File::open(params_path)
+            .map_err(|why| format!("Could not open {}: {}", params_path.display(), why))?;
+
+        let params_reader = BufReader::new(params_file);
+        let params = serde_cbor::from_reader(params_reader)
+            .map_err(|why| format!("Could not deserialize {}: {}", params_path.display(), why))?;
+
+        println!("Proving...");
+        let proof = nova::prove(&params, &prog, init, None, steps)
+            .map_err(|e| format!("Error `{e:#?}` during proving"))?
+            .unwrap();
+
+        let l1_tx = l2_to_l1_tx(pre_state, &witness);
+        Ok((proof.to_fusion_l1_proof(), l1_tx))
     }
+}
 
-    fn compute_witness<'a, S: Borrow<ir::Statement<'a, Bn128Field>>>(
-        config: &Config,
-        statements: impl Iterator<Item = S>,
-        arguments: &[Parameter],
-        solvers: &[Solver<'a, Bn128Field>],
-        tx: &SignedTx,
-        pre_state: &State,
-        post_state: &State,
-    ) -> Result<Witness<Bn128Field>, String> {
-        let signature = {
-            let path = Path::new(&config.circuit_abi_path);
-            let file = File::open(path)
-                .map_err(|why| format!("Could not open {}: {}", path.display(), why))?;
-            let mut reader = BufReader::new(file);
+trait ToFusionL1Proof {
+    fn to_fusion_l1_proof(&self) -> fusion::Proof;
+}
 
-            let abi: Abi = from_reader(&mut reader).map_err(|why| why.to_string())?;
+impl<'a> ToFusionL1Proof for nova::RecursiveSNARKWithStepCount<'a, PallasField> {
+    fn to_fusion_l1_proof(&self) -> fusion::Proof {
+        fusion::Proof { phantom: 0.into() }
+    }
+}
 
-            abi.signature()
+fn l2_to_l1_tx(pre_state: &State, witness: &NovaWitness) -> fusion::TxInfo {
+    fusion::TxInfo {
+        pre_root: pre_state.root(),
+        post_root: witness.post_root,
+        kind: witness.tx.kind,
+        sender_point: fusion::FusionPoint {
+            x: witness.tx.sender.x,
+            y: witness.tx.sender.y,
+        },
+        to_point: fusion::FusionPoint {
+            x: witness.tx.to.x,
+            y: witness.tx.to.y,
+        },
+        nonce: witness.tx.nonce,
+        value: witness.tx.value,
+        sig: fusion::FusionSignature {
+            r: fusion::FusionPoint {
+                x: witness.tx.sig.r.x,
+                y: witness.tx.sig.r.y,
+            },
+            s: witness.tx.sig.s,
+        },
+        sender_acc: fusion::Account {
+            id: witness.pre_accounts[0].id,
+            balance: witness.pre_accounts[0].balance,
+            nonce: witness.pre_accounts[0].nonce,
+        },
+        to_acc: fusion::Account {
+            id: witness.pre_accounts[1].id,
+            balance: witness.pre_accounts[1].balance,
+            nonce: witness.pre_accounts[1].nonce,
+        },
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn nova() {
+        let fusion_config = Config::default();
+
+        let (_sk_1, pk_1) = fusion_wallet::new_key_pair();
+        let (_sk_2, pk_2) = fusion_wallet::new_key_pair();
+
+        let tx = fusion_api::Tx {
+            kind: TxKind::Transfer,
+            sender: pk_1.clone().to_u256(),
+            to: pk_2.clone().to_u256(),
+            nonce: 1.into(),
+            value: 0.into(),
+        };
+        // TODO uncomment when we have Nova + BN
+        //let sig = fusion_wallet::sign(&tx, sk_1.to_string()).unwrap();
+        let signed_tx = fusion_api::SignedTx {
+            tx,
+            signature: "".to_string(), //sig.to_string(),
         };
 
-        let inputs = CircuitInput::new(tx, pre_state, post_state);
-        //println!("\n\n{}\n\n", serde_json::to_string(&inputs).unwrap());
+        let state_0 = State::default();
+        let state_1 = apply_tx(state_0.clone(), &signed_tx.tx);
 
-        let witness = parse_strict(
-            serde_json::to_string(&inputs).unwrap().as_str(),
-            signature.inputs,
-        )
-        .map(Inputs::Abi)
-        .map_err(|why| why.to_string())
-        .map_err(|e| format!("Could not parse argument: {e}"))?;
-
-        let interpreter = zokrates_interpreter::Interpreter::default();
-
-        let encoded = witness.encode();
-        let witness = interpreter
-            .execute_with_log_stream(
-                &encoded,
-                statements,
-                arguments,
-                solvers,
-                &mut std::io::stdout(),
-            )
-            .map_err(|e| format!("Execution failed: {e}"))?;
-
-        // Uncomment to see the witness verification result values
-        /*
-        use zokrates_abi::Decode;
-
-        let results_json_value: serde_json::Value =
-            zokrates_abi::Value::decode(witness.return_values(), *signature.output)
-                .into_serde_json();
-
-        println!("\nWitness: \n{results_json_value}\n");
-        */
-
-        Ok(witness)
-    }
-}
-
-trait ToFusionL1 {
-    fn to_fusion_l1_tx(&self) -> fusion::TxProof;
-    fn to_fusion_l1_proof(&self) -> fusion::Proof;
-    fn to_fusion_l1_input(&self) -> [U256; 18usize];
-}
-
-impl ToFusionL1 for Proof<Bn128Field, G16> {
-    fn to_fusion_l1_tx(&self) -> fusion::TxProof {
-        fusion::TxProof {
-            proof: self.to_fusion_l1_proof(),
-            input: self.to_fusion_l1_input().to_vec(),
-        }
+        let proof = Prover::prove(&fusion_config, &signed_tx, &state_0, &state_1);
+        assert!(proof.is_ok());
     }
 
-    fn to_fusion_l1_proof(&self) -> fusion::Proof {
-        fusion::Proof {
-            a: fusion::G1Point {
-                x: U256::from_str_radix(&self.proof.a.0[2..], 16).unwrap(),
-                y: U256::from_str_radix(&self.proof.a.1[2..], 16).unwrap(),
-            },
-            b: match &self.proof.b {
-                G2Affine::Fq2(f) => fusion::G2Point {
-                    x: [
-                        U256::from_str_radix(&f.0 .0[2..], 16).unwrap(),
-                        U256::from_str_radix(&f.0 .1[2..], 16).unwrap(),
-                    ],
-                    y: [
-                        U256::from_str_radix(&f.1 .0[2..], 16).unwrap(),
-                        U256::from_str_radix(&f.1 .1[2..], 16).unwrap(),
-                    ],
-                },
-                _ => panic!(),
-            },
-            c: fusion::G1Point {
-                x: U256::from_str_radix(&self.proof.c.0[2..], 16).unwrap(),
-                y: U256::from_str_radix(&self.proof.c.1[2..], 16).unwrap(),
-            },
-        }
-    }
+    fn apply_tx(mut state: State, tx: &Tx) -> State {
+        let sender_pk: PublicKey = tx.sender.into();
+        let sender_addr = sender_pk.address();
 
-    fn to_fusion_l1_input(&self) -> [U256; 18usize] {
-        assert_eq!(self.inputs.len(), 18);
-        self.inputs
-            .iter()
-            .map(|x| U256::from_str_radix(&x[2..], 16).unwrap())
-            .collect::<Vec<_>>()
-            .try_into()
-            .unwrap()
+        let to_pk: PublicKey = tx.to.into();
+        let to_addr = to_pk.address();
+
+        let account_sender = state.get(&sender_addr);
+        let account_to = state.get(&to_addr);
+
+        let new_account_sender = match tx.kind {
+            TxKind::Deposit => {
+                Account::new(sender_addr, account_sender.balance + tx.value, tx.nonce)
+            }
+            TxKind::Transfer | TxKind::Withdraw => {
+                Account::new(sender_addr, account_sender.balance - tx.value, tx.nonce)
+            }
+        };
+        let new_account_to = match tx.kind {
+            TxKind::Transfer => {
+                Account::new(to_addr, account_to.balance + tx.value, account_to.nonce)
+            }
+            TxKind::Withdraw | TxKind::Deposit => account_to,
+        };
+
+        state.update(&sender_addr, new_account_sender);
+        state.update(&to_addr, new_account_to);
+
+        state
     }
 }

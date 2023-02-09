@@ -48,20 +48,26 @@ def main(field preRoot, field postRoot, Tx tx, Account[2] preAccounts, bool[2][D
 
 	//Verify pre state `sender` account for all transactions.
 	acc = acc && verify_merkle_path(preRoot, hash_leaf(preAccounts[0]), directionSelector[0], prePath[0]);
+	assert(acc);
 	// Only verify pre state `to` account for Transfer transactions.
 	acc = acc && if tx.kind == 0 { verify_merkle_path(preRoot, hash_leaf(preAccounts[1]), directionSelector[1], prePath[1]) } else { true };
+	assert(acc);
 
 	// Apply tx changes //
 
 	// Verify pre state `sender` account for all transactions.
 	acc = acc && hash([tx.sender.x, tx.sender.y]) == preAccounts[0].id;
+	assert(acc);
 	// Only verify pre state `to` account for Transfer transactions.
 	acc = acc && if tx.kind == 0 { hash([tx.to.x, tx.to.y]) == preAccounts[1].id } else { true };
+	assert(acc);
 
 	// Do not verify balance of `sender` account for Deposit transactions.
 	acc = acc && if tx.kind == 1 { true } else { (preAccounts[0].balance >= tx.value) };
+	assert(acc);
 	// Always verify nonce for `sender`.
 	acc = acc && (preAccounts[0].nonce < tx.nonce);
+	assert(acc);
 
 	// Decrease the balance of `sender` account for Transfer and Withdraw transactions.
 	// Increase the balance of `sender` account for Deposit transactions.
@@ -86,8 +92,10 @@ def main(field preRoot, field postRoot, Tx tx, Account[2] preAccounts, bool[2][D
 
 	// Verify post state `sender` account for all transactions.
 	acc = acc && verify_merkle_path(postRoot, hash_leaf(postAccountSender), directionSelector[0], postPath[0]);
+	assert(acc);
 	// Only verify post state `to` account for Transfer transactions.
 	acc = acc && if tx.kind == 0 { verify_merkle_path(postRoot, hash_leaf(postAccountRecipient), directionSelector[1], postPath[1]) } else { true };
+	assert(acc);
 
 	return acc;
 }

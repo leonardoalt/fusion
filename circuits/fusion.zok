@@ -1,5 +1,5 @@
 import "./merkle_tree" as state;
-import "./babyjubjub_signature" as signature;
+//import "./babyjubjub_signature" as signature;
 
 from "./types" import DEPTH, Tx, Account;
 
@@ -9,7 +9,29 @@ def tx_hash(Tx tx) -> field {
 	return poseidon([tx.kind, poseidon([tx.sender.x, tx.sender.y]), poseidon([tx.to.x, tx.to.y]), tx.nonce, tx.value]);
 }
 
-def main(field preRoot, field postRoot, Tx tx, Account[2] preAccounts, private bool[2][DEPTH] directionSelector, private field[2][DEPTH] prePath, private field[2][DEPTH] postPath) {
-	assert(state(preRoot, postRoot, tx, preAccounts, directionSelector, prePath, postPath));
-	assert(signature(tx.sender, tx_hash(tx), tx.sig));
+struct NovaState {
+	field root;
+	//field accTxHash;
+}
+
+struct NovaWitness {
+	field postRoot;
+	Tx tx;
+	Account[2] preAccounts;
+	bool[2][DEPTH] directionSelector;
+	field[2][DEPTH] prePath;
+	field[2][DEPTH] postPath;
+}
+
+def main(NovaState state, private NovaWitness w) -> NovaState {
+	assert(state(state.root, w.postRoot, w.tx, w.preAccounts, w.directionSelector, w.prePath, w.postPath));
+	// TODO uncomment and remove the zeroes when we have Nova + BN
+	//assert(signature(w.tx.sender, tx_hash(w.tx), w.tx.sig));
+	assert(w.tx.sig.r.x == 0);
+	assert(w.tx.sig.r.y == 0);
+	assert(w.tx.sig.s == 0);
+	return NovaState {
+		root: w.postRoot
+		//accTxHash: poseidon([tx_hash(w.tx), state.accTxHash])
+	};
 }

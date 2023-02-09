@@ -54,7 +54,7 @@ impl From<U256> for TxKind {
 pub fn hash_tx(tx: &Tx) -> U256 {
     let sender_pk = PublicKey::from_babyjubjub_point(&tx.sender.to_babyjubjub_point());
     let to_pk = PublicKey::from_babyjubjub_point(&tx.to.to_babyjubjub_point());
-    Poseidon::new()
+    PallasPoseidon::new()
         .hash(
             [
                 tx.kind.to_u256().to_fr(),
@@ -102,7 +102,7 @@ mod test {
         assert_eq!(
             hash_tx(&tx),
             U256::from_dec_str(
-                "5446841522722730699994610570698753366919140210878808046341046395713679433299"
+                "28544637272627171505102149562136275359960975922724358565245041563167326583885"
             )
             .unwrap()
         );

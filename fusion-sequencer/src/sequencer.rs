@@ -26,7 +26,7 @@ async fn request_proof(
     tx: SignedTx,
     pre_state: State,
     post_state: State,
-) -> anyhow::Result<fusion::TxProof, String> {
+) -> anyhow::Result<(fusion::Proof, fusion::TxInfo), String> {
     Prover::prove(&config, &tx, &pre_state, &post_state)
 }
 
@@ -90,7 +90,10 @@ pub async fn run_sequencer(
                 Ok(proof) => {
                     println!("Submiting block");
                     l1_contract
-                        .submit_block([proof])
+                        .submit_block(fusion::BatchProof {
+                            proof: proof.0,
+                            txs: vec![proof.1],
+                        })
                         .gas(1000000)
                         .send()
                         .await
@@ -151,8 +154,9 @@ fn apply_tx(mut state: State, tx: &Tx) -> State {
     state
 }
 
-fn verify_tx_signature(signed_tx: &SignedTx) -> anyhow::Result<()> {
-    fusion_wallet::verify_tx_signature(signed_tx)
+fn verify_tx_signature(_signed_tx: &SignedTx) -> anyhow::Result<()> {
+    //fusion_wallet::verify_tx_signature(signed_tx)
+    Ok(())
 }
 
 fn init_mempool(_path: &Path) -> MemPool {
@@ -265,7 +269,7 @@ mod test {
         let n_tx = 3;
 
         tokio::spawn(async move {
-            let (sk_1, pk_1) = fusion_wallet::new_key_pair();
+            let (_sk_1, pk_1) = fusion_wallet::new_key_pair();
             let (_sk_2, pk_2) = fusion_wallet::new_key_pair();
 
             for i in 0..n_tx {
@@ -276,10 +280,11 @@ mod test {
                     nonce: (i + 1).into(),
                     value: 0.into(),
                 };
-                let sig = fusion_wallet::sign(&tx, sk_1.to_string()).unwrap();
+                // TODO fix this when we have Nova + BN
+                //let sig = fusion_wallet::sign(&tx, sk_1.to_string()).unwrap();
                 let signed_tx = fusion_api::SignedTx {
                     tx,
-                    signature: sig.to_string(),
+                    signature: "".to_string(), //sig.to_string(),
                 };
                 // TODO: fix this hack somehow
                 // Wait until rx starts listening.
@@ -297,7 +302,7 @@ mod test {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn deposit() {
+    async fn deposit_simple() {
         let anvil_config = NodeConfig::test();
 
         let (_api, handle) = spawn(anvil_config.clone()).await;
@@ -326,7 +331,7 @@ mod test {
         });
 
         let contract_clone = contract.clone();
-        let (sk_1, pk_1) = fusion_wallet::new_key_pair();
+        let (_sk_1, pk_1) = fusion_wallet::new_key_pair();
         let (_sk_2, pk_2) = fusion_wallet::new_key_pair();
         let pk_1_address = pk_1.address();
         let _pk_2_address = pk_2.address();
@@ -354,10 +359,11 @@ mod test {
                 nonce: 1.into(),
                 value: deposit_amt.into(),
             };
-            let sig = fusion_wallet::sign(&tx, sk_1.to_string()).unwrap();
+            // TODO fix this when we have Nova + BN
+            //let sig = fusion_wallet::sign(&tx, sk_1.to_string()).unwrap();
             let signed_tx = fusion_api::SignedTx {
                 tx,
-                signature: sig.to_string(),
+                signature: "".to_string(), //sig.to_string(),
             };
             // TODO: fix this hack somehow
             // Wait until rx starts listening.
@@ -412,7 +418,7 @@ mod test {
         });
 
         let contract_clone = contract.clone();
-        let (sk_1, pk_1) = fusion_wallet::new_key_pair();
+        let (_sk_1, pk_1) = fusion_wallet::new_key_pair();
         let (_sk_2, pk_2) = fusion_wallet::new_key_pair();
         let pk_1_address = pk_1.address();
         let _pk_2_address = pk_2.address();
@@ -441,10 +447,11 @@ mod test {
                     nonce: i.into(),
                     value: 300.into(),
                 };
-                let sig = fusion_wallet::sign(&tx, sk_1.to_string()).unwrap();
+                // TODO fix this when we have Nova + BN
+                //let sig = fusion_wallet::sign(&tx, sk_1.to_string()).unwrap();
                 let signed_tx = fusion_api::SignedTx {
                     tx,
-                    signature: sig.to_string(),
+                    signature: "".to_string(), //sig.to_string(),
                 };
                 // TODO: fix this hack somehow
                 // Wait until rx starts listening.
@@ -500,8 +507,8 @@ mod test {
         });
 
         let contract_clone = contract.clone();
-        let (sk_1, pk_1) = fusion_wallet::new_key_pair();
-        let (sk_2, pk_2) = fusion_wallet::new_key_pair();
+        let (_sk_1, pk_1) = fusion_wallet::new_key_pair();
+        let (_sk_2, pk_2) = fusion_wallet::new_key_pair();
         let pk_1_address = pk_1.address();
         let pk_2_address = pk_2.address();
         let l1_recipient_addr = ethers::types::Address::from_low_u64_be(42);
@@ -544,10 +551,11 @@ mod test {
                 nonce: 1.into(),
                 value: 1000.into(),
             };
-            let sig = fusion_wallet::sign(&tx, sk_1.to_string()).unwrap();
+            // TODO fix this when we have Nova + BN
+            //let sig = fusion_wallet::sign(&tx, sk_1.to_string()).unwrap();
             let signed_tx = fusion_api::SignedTx {
                 tx,
-                signature: sig.to_string(),
+                signature: "".to_string(), //sig.to_string(),
             };
             // TODO: fix this hack somehow
             // Wait until rx starts listening.
@@ -560,10 +568,11 @@ mod test {
                 nonce: 2.into(),
                 value: 600.into(),
             };
-            let sig = fusion_wallet::sign(&tx, sk_1.to_string()).unwrap();
+            // TODO fix this when we have Nova + BN
+            //let sig = fusion_wallet::sign(&tx, sk_1.to_string()).unwrap();
             let signed_tx = fusion_api::SignedTx {
                 tx,
-                signature: sig.to_string(),
+                signature: "".to_string(), //sig.to_string(),
             };
             // TODO: fix this hack somehow
             // Wait until rx starts listening.
@@ -576,10 +585,11 @@ mod test {
                 nonce: 3.into(),
                 value: 100.into(),
             };
-            let sig = fusion_wallet::sign(&tx, sk_2.to_string()).unwrap();
+            // TODO fix this when we have Nova + BN
+            //let sig = fusion_wallet::sign(&tx, sk_2.to_string()).unwrap();
             let signed_tx = fusion_api::SignedTx {
                 tx,
-                signature: sig.to_string(),
+                signature: "".to_string(), //sig.to_string(),
             };
             // TODO: fix this hack somehow
             // Wait until rx starts listening.
@@ -629,7 +639,7 @@ mod test {
                 .iter()
                 .filter(|tx| tx.to == Some(contract))
                 .filter_map(|tx| decode_l2_proof(tx.input.clone()))
-                .map(|tx_proof| tx_proof_to_fusion_tx(&tx_proof))
+                .flat_map(|batch_proof| batch_proof_to_fusion_txs(&batch_proof))
                 .collect();
 
             if !fusion_txs.is_empty() {
@@ -638,22 +648,26 @@ mod test {
         }
     }
 
-    fn decode_l2_proof(input: types::Bytes) -> Option<fusion::TxProof> {
+    fn decode_l2_proof(input: types::Bytes) -> Option<fusion::BatchProof> {
         match fusion::FusionCalls::decode(input) {
             Ok(fusion::FusionCalls::SubmitBlock(fusion::SubmitBlockCall { l_2_block })) => {
-                Some(l_2_block[0].clone())
+                Some(l_2_block.clone())
             }
             _ => None,
         }
     }
 
-    fn tx_proof_to_fusion_tx(tx_proof: &fusion::TxProof) -> Tx {
-        Tx {
-            kind: tx_proof.input[2].into(),
-            sender: PublicKey::from_point(tx_proof.input[3], tx_proof.input[4]).to_u256(),
-            to: PublicKey::from_point(tx_proof.input[5], tx_proof.input[6]).to_u256(),
-            nonce: tx_proof.input[7],
-            value: tx_proof.input[8],
-        }
+    fn batch_proof_to_fusion_txs(tx_proof: &fusion::BatchProof) -> Vec<Tx> {
+        tx_proof
+            .txs
+            .iter()
+            .map(|tx| Tx {
+                kind: tx.kind.into(),
+                sender: PublicKey::from_point(tx.sender_point.x, tx.sender_point.y).to_u256(),
+                to: PublicKey::from_point(tx.to_point.x, tx.to_point.y).to_u256(),
+                nonce: tx.nonce,
+                value: tx.value,
+            })
+            .collect()
     }
 }

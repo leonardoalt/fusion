@@ -4,9 +4,11 @@ use num_bigint::{
     BigInt,
     Sign::{NoSign, Plus},
 };
-use poseidon_rs::*;
+use poseidon_rs::{PallasField, PallasPoseidon};
 use serde::{Deserialize, Serialize};
 use std::string::ToString;
+
+type Fr = PallasField;
 
 /// The Fusion private key.
 /// It simply wraps a Baby Jubjub private key.
@@ -70,8 +72,8 @@ impl From<U256> for PublicKey {
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Point {
-    x: U256,
-    y: U256,
+    pub x: U256,
+    pub y: U256,
 }
 
 pub trait FromBabyJubjubPoint {
@@ -148,7 +150,7 @@ pub trait ToFr {
 /// address of a public key.
 impl ToFr for PublicKey {
     fn to_fr(&self) -> Fr {
-        Poseidon::new()
+        PallasPoseidon::new()
             .hash(vec![self.0.x.to_fr(), self.0.y.to_fr()])
             .unwrap()
     }
@@ -239,7 +241,7 @@ mod test {
         assert_eq!(
             pk.address(),
             U256::from_dec_str(
-                "7853200120776062878684798364095072458815029376092732009249414926327459813530"
+                "11054194169582569214866185992532613075536268469565910475726621295796394132611"
             )
             .unwrap()
         );
