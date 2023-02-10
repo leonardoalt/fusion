@@ -5,10 +5,50 @@ use trollup_types::{FromBabyJubjubPoint, PublicKey, ToBabyJubjubPoint, ToFr, ToU
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Tx {
+    pub kind: TxKind,
     pub sender: U256,
     pub to: U256,
     pub nonce: U256,
     pub value: U256,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum TxKind {
+    Transfer,
+    Deposit,
+    Withdraw,
+}
+
+impl ToU256 for TxKind {
+    fn to_u256(&self) -> U256 {
+        match self {
+            TxKind::Transfer => 0.into(),
+            TxKind::Deposit => 1.into(),
+            TxKind::Withdraw => 2.into(),
+        }
+    }
+}
+
+impl From<u8> for TxKind {
+    fn from(k: u8) -> Self {
+        match k {
+            0 => TxKind::Transfer,
+            1 => TxKind::Deposit,
+            2 => TxKind::Withdraw,
+            _ => panic!(),
+        }
+    }
+}
+
+impl From<U256> for TxKind {
+    fn from(k: U256) -> Self {
+        match k.as_u32() {
+            0 => TxKind::Transfer,
+            1 => TxKind::Deposit,
+            2 => TxKind::Withdraw,
+            _ => panic!(),
+        }
+    }
 }
 
 pub fn hash_tx(tx: &Tx) -> U256 {
@@ -17,6 +57,7 @@ pub fn hash_tx(tx: &Tx) -> U256 {
     Poseidon::new()
         .hash(
             [
+                tx.kind.to_u256().to_fr(),
                 sender_pk.to_fr(),
                 to_pk.to_fr(),
                 tx.nonce.to_fr(),
@@ -56,11 +97,12 @@ mod test {
             .unwrap(),
             nonce: 0.into(),
             value: 0.into(),
+            kind: TxKind::Transfer,
         };
         assert_eq!(
             hash_tx(&tx),
             U256::from_dec_str(
-                "7024706519851959073508005968462078426943949097906904873031507538622023544211"
+                "5446841522722730699994610570698753366919140210878808046341046395713679433299"
             )
             .unwrap()
         );

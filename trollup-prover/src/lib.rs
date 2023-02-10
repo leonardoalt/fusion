@@ -74,6 +74,7 @@ impl ToVecBool for Bitmap<256> {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CircuitTx {
+    kind: U256,
     sender: Point,
     to: Point,
     nonce: U256,
@@ -90,6 +91,7 @@ impl ToCircuitTx for trollup_api::SignedTx {
         let sender_pk: PublicKey = self.tx.sender.into();
         let to_pk: PublicKey = self.tx.to.into();
         CircuitTx {
+            kind: self.tx.kind.to_u256(),
             sender: sender_pk.0,
             to: to_pk.0,
             nonce: self.tx.nonce,
@@ -219,7 +221,7 @@ impl Prover {
 trait ToTrollupL1 {
     fn to_trollup_l1_tx(&self) -> trollup::TxProof;
     fn to_trollup_l1_proof(&self) -> trollup::Proof;
-    fn to_trollup_l1_input(&self) -> [U256; 17usize];
+    fn to_trollup_l1_input(&self) -> [U256; 18usize];
 }
 
 impl ToTrollupL1 for Proof<Bn128Field, G16> {
@@ -256,8 +258,8 @@ impl ToTrollupL1 for Proof<Bn128Field, G16> {
         }
     }
 
-    fn to_trollup_l1_input(&self) -> [U256; 17usize] {
-        assert_eq!(self.inputs.len(), 17);
+    fn to_trollup_l1_input(&self) -> [U256; 18usize] {
+        assert_eq!(self.inputs.len(), 18);
         self.inputs
             .iter()
             .map(|x| U256::from_str_radix(&x[2..], 16).unwrap())

@@ -15,6 +15,7 @@ struct Signature {
 }
 
 struct Tx {
+	field kind;
 	Point sender;
 	Point to;
 	field nonce;

@@ -43,6 +43,7 @@ pub fn new_key_pair() -> (PrivateKey, PublicKey) {
 #[cfg(test)]
 mod test {
     use super::*;
+    use trollup_api::TxKind;
     use trollup_types::ToU256;
 
     #[test]
@@ -50,6 +51,7 @@ mod test {
         let (sk_1, pk_1) = new_key_pair();
         let (_sk_2, pk_2) = new_key_pair();
         let tx = Tx {
+            kind: TxKind::Transfer,
             sender: pk_1.to_u256(),
             to: pk_2.to_u256(),
             nonce: 1.into(),
@@ -57,7 +59,7 @@ mod test {
         };
         let sig = sign(&tx, sk_1.to_string());
         let mut signed_tx = SignedTx {
-            tx: tx,
+            tx,
             signature: sig.unwrap().to_string(),
         };
         assert!(verify_tx_signature(&signed_tx).is_ok());

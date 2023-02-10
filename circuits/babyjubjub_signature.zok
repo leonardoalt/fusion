@@ -72,7 +72,5 @@ def main(Point sender, field msg, Signature sig) -> bool {
     field[2] Ahm8 = scalarMult(hm8, [sender.x, sender.y], context);
     field[2] rhs = add([sig.r.x, sig.r.y], Ahm8, context);
 
-    assert(lhs == rhs);
-
-	return true;
+	return (lhs == rhs);
 }
