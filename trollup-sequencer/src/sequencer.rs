@@ -192,7 +192,7 @@ mod test {
     use trollup_wallet;
 
     #[test]
-    fn state_test() {
+    fn state_update_test() {
         let state = State::default();
 
         let (_sk_1, pk_1) = trollup_wallet::new_key_pair();
@@ -238,7 +238,7 @@ mod test {
 
     #[ignore]
     #[tokio::test(flavor = "multi_thread")]
-    async fn end_to_end() {
+    async fn end_to_end_simple() {
         let anvil_config = NodeConfig::test();
 
         let (_api, handle) = spawn(anvil_config.clone()).await;
@@ -266,7 +266,7 @@ mod test {
             run_sequencer(&trollup_config, rx).await.unwrap();
         });
 
-        let n_tx = 1;
+        let n_tx = 3;
 
         tokio::spawn(async move {
             let (sk_1, pk_1) = trollup_wallet::new_key_pair();
