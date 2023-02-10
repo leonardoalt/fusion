@@ -105,7 +105,9 @@ pub async fn run_sequencer(
 }
 
 fn validate_tx(state: &State, tx: &SignedTx) -> anyhow::Result<()> {
-    verify_tx_signature(tx)?;
+    if matches!(tx.tx.kind, TxKind::Transfer | TxKind::Withdraw) {
+        verify_tx_signature(tx)?;
+    }
 
     let sender_pk: PublicKey = tx.tx.sender.into();
     let sender_addr = sender_pk.address();
@@ -132,8 +134,18 @@ fn apply_tx(mut state: State, tx: &Tx) -> State {
     let account_sender = state.get(&sender_addr);
     let account_to = state.get(&to_addr);
 
-    let new_account_sender = Account::new(sender_addr, account_sender.balance - tx.value, tx.nonce);
-    let new_account_to = Account::new(to_addr, account_to.balance + tx.value, account_to.nonce);
+    let new_account_sender = match tx.kind {
+        TxKind::Transfer | TxKind::Withdraw => {
+            Account::new(sender_addr, account_sender.balance - tx.value, tx.nonce)
+        }
+        TxKind::Deposit => account_sender,
+    };
+    let new_account_to = match tx.kind {
+        TxKind::Transfer | TxKind::Deposit => {
+            Account::new(to_addr, account_to.balance + tx.value, account_to.nonce)
+        }
+        TxKind::Withdraw => account_to,
+    };
 
     state.update(&sender_addr, new_account_sender);
     state.update(&to_addr, new_account_to);
@@ -179,6 +191,51 @@ mod test {
     use trollup_types::ToU256;
     use trollup_wallet;
 
+    #[test]
+    fn state_test() {
+        let state = State::default();
+
+        let (_sk_1, pk_1) = trollup_wallet::new_key_pair();
+        let (_sk_2, pk_2) = trollup_wallet::new_key_pair();
+
+        let tx_1 = trollup_api::Tx {
+            kind: TxKind::Deposit,
+            sender: 0.into(),
+            to: pk_1.clone().to_u256(),
+            nonce: 1.into(),
+            value: 1000.into(),
+        };
+
+        let tx_2 = trollup_api::Tx {
+            kind: TxKind::Transfer,
+            sender: pk_1.clone().to_u256(),
+            to: pk_2.clone().to_u256(),
+            nonce: 2.into(),
+            value: 500.into(),
+        };
+
+        let tx_3 = trollup_api::Tx {
+            kind: TxKind::Withdraw,
+            sender: pk_2.clone().to_u256(),
+            to: 0.into(),
+            nonce: 3.into(),
+            value: 200.into(),
+        };
+
+        let state = apply_tx(state, &tx_1);
+        let state = apply_tx(state, &tx_2);
+        let state = apply_tx(state, &tx_3);
+
+        let acc_1 = state.get(&pk_1.address());
+        let acc_2 = state.get(&pk_2.address());
+
+        assert_eq!(acc_1.balance, 500.into());
+        assert_eq!(acc_2.balance, 300.into());
+
+        assert_eq!(acc_1.nonce, 2.into());
+        assert_eq!(acc_2.nonce, 3.into());
+    }
+
     #[ignore]
     #[tokio::test(flavor = "multi_thread")]
     async fn end_to_end() {
@@ -217,6 +274,7 @@ mod test {
 
             for i in 0..n_tx {
                 let tx = trollup_api::Tx {
+                    kind: TxKind::Transfer,
                     sender: pk_1.clone().to_u256(),
                     to: pk_2.clone().to_u256(),
                     nonce: (i + 1).into(),
@@ -272,10 +330,11 @@ mod test {
 
     fn tx_proof_to_trollup_tx(tx_proof: &trollup::TxProof) -> Tx {
         Tx {
-            sender: PublicKey::from_point(tx_proof.input[2], tx_proof.input[3]).to_u256(),
-            to: PublicKey::from_point(tx_proof.input[4], tx_proof.input[5]).to_u256(),
-            nonce: tx_proof.input[6],
-            value: tx_proof.input[7],
+            kind: tx_proof.input[2].into(),
+            sender: PublicKey::from_point(tx_proof.input[3], tx_proof.input[4]).to_u256(),
+            to: PublicKey::from_point(tx_proof.input[5], tx_proof.input[6]).to_u256(),
+            nonce: tx_proof.input[7],
+            value: tx_proof.input[8],
         }
     }
 }

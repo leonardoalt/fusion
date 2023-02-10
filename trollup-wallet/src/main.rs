@@ -1,7 +1,6 @@
 use tarpc::{client, context, tokio_serde::formats::Json};
 
 use clap::{Parser, Subcommand};
-use ethers_core::types::U512;
 use num_bigint::BigInt;
 use std::net::IpAddr;
 
@@ -25,34 +24,39 @@ async fn main() -> anyhow::Result<()> {
             println!("{k}");
             Ok(())
         }
-        Subcommands::Sign(sig_args) => {
-            let signature = sign(sig_args).unwrap();
+        Subcommands::Sign(cli_tx) => {
+            let signature =
+                trollup_wallet::sign(&cli_tx.clone().into(), cli_tx.private_key.unwrap()).unwrap();
             println!("{signature}");
             Ok(())
         }
-        Subcommands::Send(send_args) => send(send_args, &config).await,
+        Subcommands::Send {
+            send_sub: SendSubcommands::Transfer(cli_tx),
+        } => {
+            let tx: TransferTx = cli_tx.clone().into();
+            let signed_tx = SignedTx {
+                tx: tx.clone().0,
+                signature: match cli_tx.signature {
+                    Some(sig) => sig,
+                    None => trollup_wallet::sign(&tx.0, cli_tx.private_key.unwrap())
+                        .unwrap()
+                        .to_string(),
+                },
+            };
+            send(signed_tx, &config).await
+        }
+        Subcommands::Send {
+            send_sub: SendSubcommands::Withdraw(_cli_tx),
+        } => Ok(()),
         Subcommands::Verify(args) => {
-            verify(args);
+            trollup_wallet::verify_tx_signature(&args.into()).unwrap();
             Ok(())
         }
     }
 }
 
-fn sign(sig_args: CLITx) -> anyhow::Result<U512> {
-    trollup_wallet::sign(&sig_args.clone().into(), sig_args.private_key.unwrap())
-}
-
-async fn send(send_args: CLITx, config: &Config) -> anyhow::Result<()> {
-    let signed: SignedTx = if send_args.signature.is_some() {
-        send_args.clone().into()
-    } else {
-        SignedTx {
-            tx: send_args.clone().into(),
-            signature: sign(send_args).unwrap().to_string(),
-        }
-    };
-
-    trollup_wallet::verify_tx_signature(&signed)?;
+async fn send(tx: SignedTx, config: &Config) -> anyhow::Result<()> {
+    trollup_wallet::verify_tx_signature(&tx)?;
 
     let server_addr = (
         IpAddr::V4(config.socket_address.parse().unwrap()),
@@ -61,7 +65,7 @@ async fn send(send_args: CLITx, config: &Config) -> anyhow::Result<()> {
     let transport = tarpc::serde_transport::tcp::connect(server_addr, Json::default);
     let client = TrollupRPCClient::new(client::Config::default(), transport.await?).spawn();
     client
-        .submit_transaction(context::current(), signed)
+        .submit_transaction(context::current(), tx)
         .await
         .unwrap()
         .unwrap();
@@ -69,26 +73,39 @@ async fn send(send_args: CLITx, config: &Config) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn verify(args: CLITx) {
-    trollup_wallet::verify_tx_signature(&args.into()).unwrap();
+#[derive(Debug, Clone)]
+pub struct TransferTx(pub Tx);
+
+impl From<CLITx> for TransferTx {
+    fn from(cli_tx: CLITx) -> Self {
+        let tx = Tx {
+            sender: cli_tx.sender.to_u256(),
+            to: cli_tx.to.to_u256(),
+            nonce: cli_tx.nonce.to_u256(),
+            value: cli_tx.value.to_u256(),
+            kind: TxKind::Transfer,
+        };
+        Self(tx)
+    }
 }
 
 impl From<CLITx> for Tx {
-    fn from(tx: CLITx) -> Self {
+    fn from(cli_tx: CLITx) -> Self {
         Self {
-            sender: tx.sender.to_u256(),
-            to: tx.to.to_u256(),
-            nonce: tx.nonce.to_u256(),
-            value: tx.value.to_u256(),
+            sender: cli_tx.sender.to_u256(),
+            to: cli_tx.to.to_u256(),
+            nonce: cli_tx.nonce.to_u256(),
+            value: cli_tx.value.to_u256(),
+            kind: cli_tx.kind.unwrap().into(),
         }
     }
 }
 
 impl From<CLITx> for SignedTx {
-    fn from(tx: CLITx) -> Self {
+    fn from(cli_tx: CLITx) -> Self {
         Self {
-            tx: tx.clone().into(),
-            signature: tx.signature.unwrap(),
+            tx: cli_tx.clone().into(),
+            signature: cli_tx.signature.unwrap(),
         }
     }
 }
@@ -109,9 +126,20 @@ pub enum Subcommands {
     #[clap(about = "Sign a trollup transaction.")]
     Sign(CLITx),
     #[clap(about = "Send trollup transaction, optionally sign it before.")]
-    Send(CLITx),
+    Send {
+        #[clap(subcommand)]
+        send_sub: SendSubcommands,
+    },
     #[clap(about = "Verify transaction signature.")]
     Verify(CLITx),
+}
+
+#[derive(Debug, Subcommand)]
+pub enum SendSubcommands {
+    #[clap(about = "Send an L2 transfer.")]
+    Transfer(CLITx),
+    #[clap(about = "Withdraw from the L2 into Ethereum L1.")]
+    Withdraw(CLITx),
 }
 
 #[derive(Debug, Clone, Parser, Default)]
@@ -164,6 +192,8 @@ pub struct CLITx {
         default_value = "0"
     )]
     pub nonce: BigInt,
+    #[clap(long, short = 'k', value_name = "KIND", help = "The transaction kind.")]
+    pub kind: Option<u8>,
     #[clap(
         long,
         short = 's',

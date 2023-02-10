@@ -28,7 +28,7 @@ def hash_leaf(Account acc) -> field {
 
 // Merke-Tree inclusion proof for tree depth 256 using Poseidon.
 // directionSelector => true if current digest is on the rhs of the hash
-def verify_merkle_tree(field root, field leaf, bool[DEPTH] directionSelector, field[DEPTH] path) -> bool {
+def verify_merkle_path(field root, field leaf, bool[DEPTH] directionSelector, field[DEPTH] path) -> bool {
 	// Start from the leaf
 	field mut digest = leaf;
 
@@ -43,34 +43,46 @@ def verify_merkle_tree(field root, field leaf, bool[DEPTH] directionSelector, fi
 
 def main(field preRoot, field postRoot, Tx tx, Account[2] preAccounts, bool[2][DEPTH] directionSelector, field[2][DEPTH] prePath, field[2][DEPTH] postPath) -> bool {
 	// Verify current state
-	for u32 i in 0..2 {
-		assert(verify_merkle_tree(preRoot, hash_leaf(preAccounts[i]), directionSelector[i], prePath[i]));
-	}
 
-	/* Apply tx changes */
-	assert(hash([tx.sender.x, tx.sender.y]) == preAccounts[0].id);
-	assert(hash([tx.to.x, tx.to.y]) == preAccounts[1].id);
+	bool mut acc = true;
 
-	assert(preAccounts[0].balance >= tx.value);
-	assert(preAccounts[0].nonce < tx.nonce);
+	// Do not verify pre state `sender` account for Deposit transactions.
+	acc = acc && if tx.kind == 1 { true } else { verify_merkle_path(preRoot, hash_leaf(preAccounts[0]), directionSelector[0], prePath[0]) };
+	// Do not verify pre state `to` account for Withdraw transactions.
+	acc = acc && if tx.kind == 2 { true } else { verify_merkle_path(preRoot, hash_leaf(preAccounts[1]), directionSelector[1], prePath[1]) };
 
-	Account postAccountSender = Account {
+	// Apply tx changes //
+
+	// Do not verify pre state `sender` account for Deposit transactions.
+	acc = acc && if tx.kind == 1 { true } else { hash([tx.sender.x, tx.sender.y]) == preAccounts[0].id };
+	// Do not verify pre state `to` account for Withdraw transactions.
+	acc = acc && if tx.kind == 2 { true } else { hash([tx.to.x, tx.to.y]) == preAccounts[1].id };
+
+	// Do not verify balance and nonce of `sender` account for Deposit transactions.
+	acc = acc && if tx.kind == 1 { true } else { (preAccounts[0].balance >= tx.value) && (preAccounts[0].nonce < tx.nonce) };
+
+	// Do not decrease the balance of `sender` account for Deposit transactions.
+	Account postAccountSender = if tx.kind == 1 { preAccounts[0] } else { Account {
 		id: preAccounts[0].id,
 		balance: preAccounts[0].balance - tx.value,
 		nonce: tx.nonce
-	};
+	}};
 
-	Account postAccountRecipient = Account {
+	// Do not increase the balance of `to` account for Withdraw transactions.
+	Account postAccountRecipient = if tx.kind == 2 { preAccounts[1] } else { Account {
 		id: preAccounts[1].id,
 		balance: preAccounts[1].balance + tx.value,
 		nonce: preAccounts[1].nonce
-	};
+	}};
 
-	/******************/
+	//////////////////
 
 	// Verify new state
-	assert(verify_merkle_tree(postRoot, hash_leaf(postAccountSender), directionSelector[0], postPath[0]));
-	assert(verify_merkle_tree(postRoot, hash_leaf(postAccountRecipient), directionSelector[1], postPath[1]));
 
-	return true;
+	// Do not verify post state `sender` account for Deposit transactions.
+	acc = acc && if tx.kind == 1 { true } else { verify_merkle_path(postRoot, hash_leaf(postAccountSender), directionSelector[0], postPath[0]) };
+	// Do not verify post state `to` account for Withdraw transactions.
+	acc = acc && if tx.kind == 2 { true } else { verify_merkle_path(postRoot, hash_leaf(postAccountRecipient), directionSelector[1], postPath[1]) };
+
+	return acc;
 }
