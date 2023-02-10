@@ -78,7 +78,7 @@ contract Trollup is Verifier {
             // L2 transfer, do nothing
         } else if (txKind == 1) {
             uint256 l2Value = l2Tx.input[8];
-            uint256 l2Recipient = l2Tx.input[15];
+            uint256 l2Recipient = l2Tx.input[12];
 
             if (deposits[l2Recipient] < l2Value) revert DepositAmountNotAvailable();
 
