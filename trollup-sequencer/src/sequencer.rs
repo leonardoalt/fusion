@@ -105,17 +105,17 @@ pub async fn run_sequencer(
 }
 
 fn validate_tx(state: &State, tx: &SignedTx) -> anyhow::Result<()> {
-    if matches!(tx.tx.kind, TxKind::Transfer | TxKind::Withdraw) {
-        verify_tx_signature(tx)?;
-    }
+    verify_tx_signature(tx)?;
 
     let sender_pk: PublicKey = tx.tx.sender.into();
     let sender_addr = sender_pk.address();
 
     let account = state.get(&sender_addr);
-    if tx.tx.sender == tx.tx.to {
+    if matches!(tx.tx.kind, TxKind::Transfer) && tx.tx.sender == tx.tx.to {
         Err(anyhow::anyhow!("Tx to self"))
-    } else if account.balance < tx.tx.value {
+    } else if matches!(tx.tx.kind, TxKind::Transfer | TxKind::Withdraw)
+        && account.balance < tx.tx.value
+    {
         Err(anyhow::anyhow!("Insufficient balance"))
     } else if account.nonce >= tx.tx.nonce {
         Err(anyhow::anyhow!("Nonce too low"))
@@ -135,16 +135,14 @@ fn apply_tx(mut state: State, tx: &Tx) -> State {
     let account_to = state.get(&to_addr);
 
     let new_account_sender = match tx.kind {
+        TxKind::Deposit => Account::new(sender_addr, account_sender.balance + tx.value, tx.nonce),
         TxKind::Transfer | TxKind::Withdraw => {
             Account::new(sender_addr, account_sender.balance - tx.value, tx.nonce)
         }
-        TxKind::Deposit => account_sender,
     };
     let new_account_to = match tx.kind {
-        TxKind::Transfer | TxKind::Deposit => {
-            Account::new(to_addr, account_to.balance + tx.value, account_to.nonce)
-        }
-        TxKind::Withdraw => account_to,
+        TxKind::Transfer => Account::new(to_addr, account_to.balance + tx.value, account_to.nonce),
+        TxKind::Withdraw | TxKind::Deposit => account_to,
     };
 
     state.update(&sender_addr, new_account_sender);
@@ -200,8 +198,8 @@ mod test {
 
         let tx_1 = trollup_api::Tx {
             kind: TxKind::Deposit,
-            sender: 0.into(),
-            to: pk_1.clone().to_u256(),
+            sender: pk_1.clone().to_u256(),
+            to: 0.into(),
             nonce: 1.into(),
             value: 1000.into(),
         };
@@ -300,23 +298,334 @@ mod test {
         assert_eq!(contract.root().call().await.unwrap(), state.root());
     }
 
+    #[ignore]
+    #[tokio::test(flavor = "multi_thread")]
+    async fn deposit() {
+        let anvil_config = NodeConfig::test();
+
+        let (_api, handle) = spawn(anvil_config.clone()).await;
+        let provider = handle.http_provider();
+
+        let contract = trollup::Trollup::deploy(provider.clone().into(), ())
+            .unwrap()
+            .gas(10000000)
+            .send()
+            .await
+            .unwrap();
+
+        let mut trollup_config = Config::default();
+        trollup_config.eth_rpc_url = handle.http_endpoint();
+        trollup_config.trollup_l1_contract = contract.address();
+        let wallet = &anvil_config.genesis_accounts[0];
+        trollup_config.eth_private_key = hex::encode(wallet.signer().to_bytes());
+        trollup_config.min_tx_block = 1;
+
+        assert_eq!(contract.root().call().await.unwrap(), 0.into());
+
+        let (sx, rx): (mpsc::Sender<SignedTx>, mpsc::Receiver<SignedTx>) = mpsc::channel(1024);
+
+        tokio::spawn(async move {
+            run_sequencer(&trollup_config, rx).await.unwrap();
+        });
+
+        let contract_clone = contract.clone();
+        let (sk_1, pk_1) = trollup_wallet::new_key_pair();
+        let (_sk_2, pk_2) = trollup_wallet::new_key_pair();
+        let pk_1_address = pk_1.address();
+        let _pk_2_address = pk_2.address();
+
+        tokio::spawn(async move {
+            let deposit_amt = 1000;
+
+            contract_clone
+                .deposit(pk_1_address)
+                .value(deposit_amt)
+                .gas(1000000)
+                .send()
+                .await
+                .unwrap();
+
+            assert_eq!(
+                contract_clone.deposits(pk_1_address).call().await.unwrap(),
+                deposit_amt.into()
+            );
+
+            let tx = trollup_api::Tx {
+                kind: TxKind::Deposit,
+                sender: pk_1.clone().to_u256(),
+                to: 0.into(),
+                nonce: 1.into(),
+                value: deposit_amt.into(),
+            };
+            let sig = trollup_wallet::sign(&tx, sk_1.to_string()).unwrap();
+            let signed_tx = trollup_api::SignedTx {
+                tx,
+                signature: sig.to_string(),
+            };
+            // TODO: fix this hack somehow
+            // Wait until rx starts listening.
+            while sx.send(signed_tx.clone()).await.is_err() {}
+        });
+
+        let mut state = State::default();
+        for _ in 0..1 {
+            let txs = next_trollup_txs(contract.address(), &provider).await;
+            state = txs.iter().fold(state, apply_tx);
+        }
+
+        let post_pk_1 = state.get(&pk_1_address);
+        assert_eq!(post_pk_1.balance, 1000.into());
+        assert_eq!(post_pk_1.nonce, 1.into());
+
+        assert_eq!(
+            contract.deposits(pk_1_address).call().await.unwrap(),
+            0.into()
+        );
+
+        assert_eq!(contract.root().call().await.unwrap(), state.root());
+    }
+
+    #[ignore]
+    #[tokio::test(flavor = "multi_thread")]
+    async fn deposit_partial_claim() {
+        let anvil_config = NodeConfig::test();
+
+        let (_api, handle) = spawn(anvil_config.clone()).await;
+        let provider = handle.http_provider();
+
+        let contract = trollup::Trollup::deploy(provider.clone().into(), ())
+            .unwrap()
+            .gas(10000000)
+            .send()
+            .await
+            .unwrap();
+
+        let mut trollup_config = Config::default();
+        trollup_config.eth_rpc_url = handle.http_endpoint();
+        trollup_config.trollup_l1_contract = contract.address();
+        let wallet = &anvil_config.genesis_accounts[0];
+        trollup_config.eth_private_key = hex::encode(wallet.signer().to_bytes());
+        trollup_config.min_tx_block = 1;
+
+        assert_eq!(contract.root().call().await.unwrap(), 0.into());
+
+        let (sx, rx): (mpsc::Sender<SignedTx>, mpsc::Receiver<SignedTx>) = mpsc::channel(1024);
+
+        tokio::spawn(async move {
+            run_sequencer(&trollup_config, rx).await.unwrap();
+        });
+
+        let contract_clone = contract.clone();
+        let (sk_1, pk_1) = trollup_wallet::new_key_pair();
+        let (_sk_2, pk_2) = trollup_wallet::new_key_pair();
+        let pk_1_address = pk_1.address();
+        let _pk_2_address = pk_2.address();
+
+        tokio::spawn(async move {
+            let deposit_amt = 1000;
+
+            contract_clone
+                .deposit(pk_1_address)
+                .value(deposit_amt)
+                .gas(1000000)
+                .send()
+                .await
+                .unwrap();
+
+            assert_eq!(
+                contract_clone.deposits(pk_1_address).call().await.unwrap(),
+                deposit_amt.into()
+            );
+
+            for i in 1..=2 {
+                let tx = trollup_api::Tx {
+                    kind: TxKind::Deposit,
+                    sender: pk_1.clone().to_u256(),
+                    to: 0.into(),
+                    nonce: i.into(),
+                    value: 300.into(),
+                };
+                let sig = trollup_wallet::sign(&tx, sk_1.to_string()).unwrap();
+                let signed_tx = trollup_api::SignedTx {
+                    tx,
+                    signature: sig.to_string(),
+                };
+                // TODO: fix this hack somehow
+                // Wait until rx starts listening.
+                while sx.send(signed_tx.clone()).await.is_err() {}
+            }
+        });
+
+        let mut state = State::default();
+        for _ in 0..2 {
+            let txs = next_trollup_txs(contract.address(), &provider).await;
+            state = txs.iter().fold(state, apply_tx);
+        }
+
+        let post_pk_1 = state.get(&pk_1_address);
+        assert_eq!(post_pk_1.balance, 600.into());
+        assert_eq!(post_pk_1.nonce, 2.into());
+
+        assert_eq!(
+            contract.deposits(pk_1_address).call().await.unwrap(),
+            400.into()
+        );
+
+        assert_eq!(contract.root().call().await.unwrap(), state.root());
+    }
+
+    #[ignore]
+    #[tokio::test(flavor = "multi_thread")]
+    async fn deposit_transfer_withdraw_flow() {
+        let anvil_config = NodeConfig::test();
+
+        let (_api, handle) = spawn(anvil_config.clone()).await;
+        let provider = handle.http_provider();
+
+        let contract = trollup::Trollup::deploy(provider.clone().into(), ())
+            .unwrap()
+            .gas(10000000)
+            .send()
+            .await
+            .unwrap();
+
+        let mut trollup_config = Config::default();
+        trollup_config.eth_rpc_url = handle.http_endpoint();
+        trollup_config.trollup_l1_contract = contract.address();
+        let wallet = &anvil_config.genesis_accounts[0];
+        trollup_config.eth_private_key = hex::encode(wallet.signer().to_bytes());
+        trollup_config.min_tx_block = 1;
+
+        assert_eq!(contract.root().call().await.unwrap(), 0.into());
+
+        let (sx, rx): (mpsc::Sender<SignedTx>, mpsc::Receiver<SignedTx>) = mpsc::channel(1024);
+
+        tokio::spawn(async move {
+            run_sequencer(&trollup_config, rx).await.unwrap();
+        });
+
+        let contract_clone = contract.clone();
+        let (sk_1, pk_1) = trollup_wallet::new_key_pair();
+        let (sk_2, pk_2) = trollup_wallet::new_key_pair();
+        let pk_1_address = pk_1.address();
+        let pk_2_address = pk_2.address();
+
+        tokio::spawn(async move {
+            let deposit_amt = 1000;
+
+            contract_clone
+                .deposit(pk_1_address)
+                .value(deposit_amt)
+                .gas(1000000)
+                .send()
+                .await
+                .unwrap();
+
+            assert_eq!(
+                contract_clone.deposits(pk_1_address).call().await.unwrap(),
+                deposit_amt.into()
+            );
+
+            let tx = trollup_api::Tx {
+                kind: TxKind::Deposit,
+                sender: pk_1.clone().to_u256(),
+                to: 0.into(),
+                nonce: 1.into(),
+                value: 1000.into(),
+            };
+            let sig = trollup_wallet::sign(&tx, sk_1.to_string()).unwrap();
+            let signed_tx = trollup_api::SignedTx {
+                tx,
+                signature: sig.to_string(),
+            };
+            // TODO: fix this hack somehow
+            // Wait until rx starts listening.
+            while sx.send(signed_tx.clone()).await.is_err() {}
+
+            let tx = trollup_api::Tx {
+                kind: TxKind::Transfer,
+                sender: pk_1.clone().to_u256(),
+                to: pk_2.clone().to_u256(),
+                nonce: 2.into(),
+                value: 600.into(),
+            };
+            let sig = trollup_wallet::sign(&tx, sk_1.to_string()).unwrap();
+            let signed_tx = trollup_api::SignedTx {
+                tx,
+                signature: sig.to_string(),
+            };
+            // TODO: fix this hack somehow
+            // Wait until rx starts listening.
+            while sx.send(signed_tx.clone()).await.is_err() {}
+
+            let tx = trollup_api::Tx {
+                kind: TxKind::Withdraw,
+                sender: pk_2.clone().to_u256(),
+                to: 0.into(),
+                nonce: 3.into(),
+                value: 100.into(),
+            };
+            let sig = trollup_wallet::sign(&tx, sk_2.to_string()).unwrap();
+            let signed_tx = trollup_api::SignedTx {
+                tx,
+                signature: sig.to_string(),
+            };
+            // TODO: fix this hack somehow
+            // Wait until rx starts listening.
+            while sx.send(signed_tx.clone()).await.is_err() {}
+        });
+
+        let mut state = State::default();
+        for _ in 0..3 {
+            let txs = next_trollup_txs(contract.address(), &provider).await;
+            state = txs.iter().fold(state, apply_tx);
+        }
+
+        let post_pk_1 = state.get(&pk_1_address);
+        assert_eq!(post_pk_1.balance, 400.into());
+        assert_eq!(post_pk_1.nonce, 2.into());
+
+        assert_eq!(
+            contract.deposits(pk_1_address).call().await.unwrap(),
+            0.into()
+        );
+
+        let post_pk_2 = state.get(&pk_2_address);
+        assert_eq!(post_pk_2.balance, 500.into());
+        assert_eq!(post_pk_2.nonce, 3.into());
+
+        // Uncomment when L1 contract has `withdraw`
+        /*
+        assert_eq!(
+            contract.deposits(pk_2_address).call().await.unwrap(),
+            100.into()
+        );
+        */
+
+        assert_eq!(contract.root().call().await.unwrap(), state.root());
+    }
+
     async fn next_trollup_txs(contract: types::Address, provider: &Provider<Http>) -> Vec<Tx> {
         let mut stream = provider.watch_blocks().await.unwrap();
-        let blockhash = stream.next().await.unwrap();
-        let block = provider
-            .get_block_with_txs(blockhash)
-            .await
-            .unwrap()
-            .unwrap();
-        let trollup_txs: Vec<_> = block
-            .transactions
-            .iter()
-            .filter(|tx| tx.to == Some(contract))
-            .filter_map(|tx| decode_l2_proof(tx.input.clone()))
-            .map(|tx_proof| tx_proof_to_trollup_tx(&tx_proof))
-            .collect();
+        loop {
+            let blockhash = stream.next().await.unwrap();
+            let block = provider
+                .get_block_with_txs(blockhash)
+                .await
+                .unwrap()
+                .unwrap();
+            let trollup_txs: Vec<_> = block
+                .transactions
+                .iter()
+                .filter(|tx| tx.to == Some(contract))
+                .filter_map(|tx| decode_l2_proof(tx.input.clone()))
+                .map(|tx_proof| tx_proof_to_trollup_tx(&tx_proof))
+                .collect();
 
-        trollup_txs
+            if !trollup_txs.is_empty() {
+                return trollup_txs;
+            }
+        }
     }
 
     fn decode_l2_proof(input: types::Bytes) -> Option<trollup::TxProof> {

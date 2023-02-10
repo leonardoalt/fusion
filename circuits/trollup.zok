@@ -11,6 +11,5 @@ def tx_hash(Tx tx) -> field {
 
 def main(field preRoot, field postRoot, Tx tx, Account[2] preAccounts, private bool[2][DEPTH] directionSelector, private field[2][DEPTH] prePath, private field[2][DEPTH] postPath) {
 	assert(state(preRoot, postRoot, tx, preAccounts, directionSelector, prePath, postPath));
-	// Do not verify signatures for Deposit transactions.
-	assert(if tx.kind == 1 { true } else { signature(tx.sender, tx_hash(tx), tx.sig) });
+	assert(signature(tx.sender, tx_hash(tx), tx.sig));
 }

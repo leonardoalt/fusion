@@ -46,6 +46,9 @@ async fn main() -> anyhow::Result<()> {
             send(signed_tx, &config).await
         }
         Subcommands::Send {
+            send_sub: SendSubcommands::Deposit(_cli_tx),
+        } => Ok(()),
+        Subcommands::Send {
             send_sub: SendSubcommands::Withdraw(_cli_tx),
         } => Ok(()),
         Subcommands::Verify(args) => {
@@ -138,6 +141,8 @@ pub enum Subcommands {
 pub enum SendSubcommands {
     #[clap(about = "Send an L2 transfer.")]
     Transfer(CLITx),
+    #[clap(about = "Claim an L1 deposit into the L2.")]
+    Deposit(CLITx),
     #[clap(about = "Withdraw from the L2 into Ethereum L1.")]
     Withdraw(CLITx),
 }

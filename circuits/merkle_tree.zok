@@ -46,43 +46,48 @@ def main(field preRoot, field postRoot, Tx tx, Account[2] preAccounts, bool[2][D
 
 	bool mut acc = true;
 
-	// Do not verify pre state `sender` account for Deposit transactions.
-	acc = acc && if tx.kind == 1 { true } else { verify_merkle_path(preRoot, hash_leaf(preAccounts[0]), directionSelector[0], prePath[0]) };
-	// Do not verify pre state `to` account for Withdraw transactions.
-	acc = acc && if tx.kind == 2 { true } else { verify_merkle_path(preRoot, hash_leaf(preAccounts[1]), directionSelector[1], prePath[1]) };
+	//Verify pre state `sender` account for all transactions.
+	acc = acc && verify_merkle_path(preRoot, hash_leaf(preAccounts[0]), directionSelector[0], prePath[0]);
+	// Only verify pre state `to` account for Transfer transactions.
+	acc = acc && if tx.kind == 0 { verify_merkle_path(preRoot, hash_leaf(preAccounts[1]), directionSelector[1], prePath[1]) } else { true };
 
 	// Apply tx changes //
 
-	// Do not verify pre state `sender` account for Deposit transactions.
-	acc = acc && if tx.kind == 1 { true } else { hash([tx.sender.x, tx.sender.y]) == preAccounts[0].id };
-	// Do not verify pre state `to` account for Withdraw transactions.
-	acc = acc && if tx.kind == 2 { true } else { hash([tx.to.x, tx.to.y]) == preAccounts[1].id };
+	// Verify pre state `sender` account for all transactions.
+	acc = acc && hash([tx.sender.x, tx.sender.y]) == preAccounts[0].id;
+	// Only verify pre state `to` account for Transfer transactions.
+	acc = acc && if tx.kind == 0 { hash([tx.to.x, tx.to.y]) == preAccounts[1].id } else { true };
 
-	// Do not verify balance and nonce of `sender` account for Deposit transactions.
-	acc = acc && if tx.kind == 1 { true } else { (preAccounts[0].balance >= tx.value) && (preAccounts[0].nonce < tx.nonce) };
+	// Do not verify balance of `sender` account for Deposit transactions.
+	acc = acc && if tx.kind == 1 { true } else { (preAccounts[0].balance >= tx.value) };
+	// Always verify nonce for `sender`.
+	acc = acc && (preAccounts[0].nonce < tx.nonce);
 
-	// Do not decrease the balance of `sender` account for Deposit transactions.
-	Account postAccountSender = if tx.kind == 1 { preAccounts[0] } else { Account {
+	// Decrease the balance of `sender` account for Transfer and Withdraw transactions.
+	// Increase the balance of `sender` account for Deposit transactions.
+	Account postAccountSender = Account {
 		id: preAccounts[0].id,
-		balance: preAccounts[0].balance - tx.value,
+		balance: if tx.kind == 1 { preAccounts[0].balance + tx.value } else { preAccounts[0].balance - tx.value},
 		nonce: tx.nonce
-	}};
+	};
 
-	// Do not increase the balance of `to` account for Withdraw transactions.
-	Account postAccountRecipient = if tx.kind == 2 { preAccounts[1] } else { Account {
+	// Only increase the balance of `to` account for Transfer transactions.
+	Account postAccountRecipient = if tx.kind == 0 { Account {
 		id: preAccounts[1].id,
 		balance: preAccounts[1].balance + tx.value,
 		nonce: preAccounts[1].nonce
-	}};
+	}} else {
+		preAccounts[1]
+	};
 
 	//////////////////
 
 	// Verify new state
 
-	// Do not verify post state `sender` account for Deposit transactions.
-	acc = acc && if tx.kind == 1 { true } else { verify_merkle_path(postRoot, hash_leaf(postAccountSender), directionSelector[0], postPath[0]) };
-	// Do not verify post state `to` account for Withdraw transactions.
-	acc = acc && if tx.kind == 2 { true } else { verify_merkle_path(postRoot, hash_leaf(postAccountRecipient), directionSelector[1], postPath[1]) };
+	// Verify post state `sender` account for all transactions.
+	acc = acc && verify_merkle_path(postRoot, hash_leaf(postAccountSender), directionSelector[0], postPath[0]);
+	// Only verify post state `to` account for Transfer transactions.
+	acc = acc && if tx.kind == 0 { verify_merkle_path(postRoot, hash_leaf(postAccountRecipient), directionSelector[1], postPath[1]) } else { true };
 
 	return acc;
 }
