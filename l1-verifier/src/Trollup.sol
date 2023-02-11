@@ -12,6 +12,7 @@ contract Trollup is Verifier {
     error InvalidInputLength();
     error InvalidSNARK();
     error InvalidTransactionType();
+    error InvalidL1Address();
     error DepositAmountTooLow();
     error DepositAmountNotAvailable();
 
@@ -86,7 +87,13 @@ contract Trollup is Verifier {
                 deposits[l2Recipient] -= l2Value;
             }
         } else if (txKind == 2) {
-            // L2 -> L1 withdraw, do nothing
+            uint256 l2Value = l2Tx.input[8];
+            uint256 l1Recipient = l2Tx.input[15];
+
+            address l1Address = address(uint160(l1Recipient));
+            if (l1Recipient != uint160(l1Address)) revert InvalidL1Address();
+
+            payable(l1Address).transfer(l2Value);
         } else {
             revert InvalidTransactionType();
         }

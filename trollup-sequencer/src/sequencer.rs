@@ -509,6 +509,22 @@ mod test {
         let (sk_2, pk_2) = trollup_wallet::new_key_pair();
         let pk_1_address = pk_1.address();
         let pk_2_address = pk_2.address();
+        let l1_recipient_addr = ethers::types::Address::from_low_u64_be(42);
+
+        // L1 recipient has 0 ETH
+        assert_eq!(
+            provider.get_balance(l1_recipient_addr, None).await.unwrap(),
+            0.into()
+        );
+
+        // Contract has 0 ETH
+        assert_eq!(
+            provider
+                .get_balance(contract.address(), None)
+                .await
+                .unwrap(),
+            0.into()
+        );
 
         tokio::spawn(async move {
             let deposit_amt = 1000;
@@ -561,7 +577,7 @@ mod test {
             let tx = trollup_api::Tx {
                 kind: TxKind::Withdraw,
                 sender: pk_2.clone().to_u256(),
-                to: 0.into(),
+                to: l1_recipient_addr.to_low_u64_be().into(),
                 nonce: 3.into(),
                 value: 100.into(),
             };
@@ -585,6 +601,7 @@ mod test {
         assert_eq!(post_pk_1.balance, 400.into());
         assert_eq!(post_pk_1.nonce, 2.into());
 
+        // All deposits were claimed.
         assert_eq!(
             contract.deposits(pk_1_address).call().await.unwrap(),
             0.into()
@@ -594,13 +611,11 @@ mod test {
         assert_eq!(post_pk_2.balance, 500.into());
         assert_eq!(post_pk_2.nonce, 3.into());
 
-        // Uncomment when L1 contract has `withdraw`
-        /*
+        // L1 recipient has the 100 that were withdrawn.
         assert_eq!(
-            contract.deposits(pk_2_address).call().await.unwrap(),
+            provider.get_balance(l1_recipient_addr, None).await.unwrap(),
             100.into()
         );
-        */
 
         assert_eq!(contract.root().call().await.unwrap(), state.root());
     }
