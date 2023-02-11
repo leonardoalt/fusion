@@ -5,6 +5,7 @@ pub mod state;
 use crate::merkle_tree::ToBitmap;
 use crate::state::{Account, State};
 
+use trollup_api::*;
 use trollup_config::*;
 use trollup_l1::trollup;
 use trollup_types::{FromBabyJubjubPoint, Point, PublicKey, ToBabyJubjubSignature, ToU256};
@@ -40,13 +41,26 @@ pub struct CircuitInput {
 }
 
 impl CircuitInput {
-    pub fn new(tx: CircuitTx, pre_state: &State, post_state: &State) -> Self {
-        let sender_addr = PublicKey(tx.sender.clone()).address();
-        let to_addr = PublicKey(tx.to.clone()).address();
+    pub fn new(tx: &SignedTx, pre_state: &State, post_state: &State) -> Self {
+        let circuit_tx = tx.to_circuit_tx();
+
+        let sender_addr = PublicKey(circuit_tx.sender.clone()).address();
+        let to_addr = PublicKey(circuit_tx.to.clone()).address();
+
+        let pre_account_from = pre_state.get(&sender_addr);
+        let pre_account_to = match tx.tx.kind {
+            TxKind::Withdraw => Account {
+                id: tx.tx.to,
+                balance: 0.into(),
+                nonce: 0.into(),
+            },
+            _ => pre_state.get(&to_addr),
+        };
+
         Self {
             pre_root: pre_state.root(),
-            tx,
-            pre_accounts: vec![pre_state.get(&sender_addr), pre_state.get(&to_addr)],
+            tx: circuit_tx,
+            pre_accounts: vec![pre_account_from, pre_account_to],
             post_root: post_state.root(),
             direction_selector: vec![
                 sender_addr.to_bitmap().to_vec_bool(),
@@ -168,7 +182,7 @@ impl Prover {
     fn compute_witness<I: IntoIterator<Item = ir::Statement<Bn128Field>>>(
         config: &Config,
         prog: ir::ProgIterator<Bn128Field, I>,
-        tx: &trollup_api::SignedTx,
+        tx: &SignedTx,
         pre_state: &State,
         post_state: &State,
     ) -> Result<Witness<Bn128Field>, String> {
@@ -183,7 +197,7 @@ impl Prover {
             abi.signature()
         };
 
-        let inputs = CircuitInput::new(tx.to_circuit_tx(), pre_state, post_state);
+        let inputs = CircuitInput::new(tx, pre_state, post_state);
         //println!("\n\n{}\n\n", serde_json::to_string(&inputs).unwrap());
 
         let arguments = parse_strict(
