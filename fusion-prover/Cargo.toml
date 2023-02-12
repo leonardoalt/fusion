@@ -17,7 +17,7 @@ zokrates_abi = { git = "https://github.com/ZoKrates/ZoKrates", tag = "0.8.3" }
 zokrates_ark = { git = "https://github.com/ZoKrates/ZoKrates", tag = "0.8.3" }
 zokrates_ast = { git = "https://github.com/ZoKrates/ZoKrates", tag = "0.8.3" }
 zokrates_field = { git = "https://github.com/ZoKrates/ZoKrates", tag = "0.8.3" }
-zokrates_interpreter = { git = "https://github.com/ZoKrates/ZoKrates", tag = "0.8.3" }
+zokrates_interpreter = { git = "https://github.com/ZoKrates/ZoKrates", tag = "0.8.4" }
 zokrates_proof_systems = { git = "https://github.com/ZoKrates/ZoKrates", tag = "0.8.3" }
 fusion-l1 = { path = "../l1-verifier/out/bindings" }
 fusion-api = { path = "../fusion-api" }

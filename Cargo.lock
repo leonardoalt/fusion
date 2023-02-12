@@ -2610,10 +2610,10 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_tuple",
- "zokrates_abi",
+ "zokrates_abi 0.1.7 (git+https://github.com/ZoKrates/ZoKrates?tag=0.8.3)",
  "zokrates_ark",
- "zokrates_ast",
- "zokrates_field",
+ "zokrates_ast 0.1.3",
+ "zokrates_field 0.5.2",
  "zokrates_interpreter",
  "zokrates_proof_systems",
 ]
@@ -4552,6 +4552,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "reduce"
+version = "0.1.5+deprecated"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "feff7c275fbc4a96ccdc240a5a180487a61a31baffaff6cdd4fb2c8e9e0a2ecd"
+
+[[package]]
 name = "reference-trie"
 version = "0.25.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6023,6 +6029,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "typed-arena"
+version = "1.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a9b2228007eba4120145f785df0f6c92ea538f5a3635a612ecf4e334c8c1446d"
+
+[[package]]
 name = "typenum"
 version = "1.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6563,8 +6575,42 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
- "zokrates_ast",
- "zokrates_field",
+ "zokrates_ast 0.1.3",
+ "zokrates_field 0.5.2",
+]
+
+[[package]]
+name = "zokrates_abi"
+version = "0.1.7"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.4#b5f2263410dd1a70f0d6aa6a879b28b754c3fe11"
+dependencies = [
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "zokrates_ast 0.1.4",
+ "zokrates_field 0.5.3",
+]
+
+[[package]]
+name = "zokrates_analysis"
+version = "0.1.0"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.4#b5f2263410dd1a70f0d6aa6a879b28b754c3fe11"
+dependencies = [
+ "cfg-if 0.1.10",
+ "csv",
+ "lazy_static",
+ "log",
+ "num 0.1.42",
+ "num-bigint 0.2.6",
+ "reduce",
+ "serde",
+ "serde_json",
+ "typed-arena",
+ "zokrates_ast 0.1.4",
+ "zokrates_common",
+ "zokrates_embed 0.1.9",
+ "zokrates_field 0.5.3",
+ "zokrates_pest_ast 0.3.1",
 ]
 
 [[package]]
@@ -6589,8 +6635,8 @@ dependencies = [
  "hex",
  "rand 0.8.5",
  "sha3 0.9.1",
- "zokrates_ast",
- "zokrates_field",
+ "zokrates_ast 0.1.3",
+ "zokrates_field 0.5.2",
  "zokrates_proof_systems",
 ]
 
@@ -6608,9 +6654,36 @@ dependencies = [
  "serde",
  "serde_cbor",
  "serde_json",
- "zokrates_embed",
- "zokrates_field",
- "zokrates_pest_ast",
+ "zokrates_embed 0.1.8",
+ "zokrates_field 0.5.2",
+ "zokrates_pest_ast 0.3.0",
+]
+
+[[package]]
+name = "zokrates_ast"
+version = "0.1.4"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.4#b5f2263410dd1a70f0d6aa6a879b28b754c3fe11"
+dependencies = [
+ "ark-bls12-377",
+ "cfg-if 0.1.10",
+ "csv",
+ "derivative",
+ "num-bigint 0.2.6",
+ "pairing_ce",
+ "serde",
+ "serde_cbor",
+ "serde_json",
+ "zokrates_embed 0.1.9",
+ "zokrates_field 0.5.3",
+ "zokrates_pest_ast 0.3.1",
+]
+
+[[package]]
+name = "zokrates_common"
+version = "0.1.2"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.4#b5f2263410dd1a70f0d6aa6a879b28b754c3fe11"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
@@ -6629,7 +6702,26 @@ dependencies = [
  "ark-std",
  "bellman_ce",
  "sapling-crypto_ce",
- "zokrates_field",
+ "zokrates_field 0.5.2",
+]
+
+[[package]]
+name = "zokrates_embed"
+version = "0.1.9"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.4#b5f2263410dd1a70f0d6aa6a879b28b754c3fe11"
+dependencies = [
+ "ark-bls12-377",
+ "ark-bw6-761",
+ "ark-crypto-primitives",
+ "ark-ec",
+ "ark-ff",
+ "ark-gm17",
+ "ark-r1cs-std",
+ "ark-relations",
+ "ark-std",
+ "bellman_ce",
+ "sapling-crypto_ce",
+ "zokrates_field 0.5.3",
 ]
 
 [[package]]
@@ -6657,25 +6749,59 @@ dependencies = [
 ]
 
 [[package]]
+name = "zokrates_field"
+version = "0.5.3"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.4#b5f2263410dd1a70f0d6aa6a879b28b754c3fe11"
+dependencies = [
+ "ark-bls12-377",
+ "ark-bls12-381",
+ "ark-bn254",
+ "ark-bw6-761",
+ "ark-ec",
+ "ark-ff",
+ "ark-serialize",
+ "bellman_ce",
+ "bincode 0.8.0",
+ "lazy_static",
+ "num-bigint 0.2.6",
+ "num-integer",
+ "num-traits 0.2.15",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "sha2 0.8.2",
+]
+
+[[package]]
 name = "zokrates_interpreter"
-version = "0.1.1"
-source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.3#d9006cbab88f61a3d04ec6aa6215fd05feba7acf"
+version = "0.1.2"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.4#b5f2263410dd1a70f0d6aa6a879b28b754c3fe11"
 dependencies = [
  "ark-bls12-377",
  "num 0.1.42",
  "num-bigint 0.2.6",
  "pairing_ce",
  "serde",
- "zokrates_abi",
- "zokrates_ast",
- "zokrates_embed",
- "zokrates_field",
+ "zokrates_abi 0.1.7 (git+https://github.com/ZoKrates/ZoKrates?tag=0.8.4)",
+ "zokrates_analysis",
+ "zokrates_ast 0.1.4",
+ "zokrates_embed 0.1.9",
+ "zokrates_field 0.5.3",
 ]
 
 [[package]]
 name = "zokrates_parser"
 version = "0.3.2"
 source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.3#d9006cbab88f61a3d04ec6aa6215fd05feba7acf"
+dependencies = [
+ "pest",
+ "pest_derive",
+]
+
+[[package]]
+name = "zokrates_parser"
+version = "0.3.3"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.4#b5f2263410dd1a70f0d6aa6a879b28b754c3fe11"
 dependencies = [
  "pest",
  "pest_derive",
@@ -6690,7 +6816,19 @@ dependencies = [
  "lazy_static",
  "pest",
  "pest-ast",
- "zokrates_parser",
+ "zokrates_parser 0.3.2",
+]
+
+[[package]]
+name = "zokrates_pest_ast"
+version = "0.3.1"
+source = "git+https://github.com/ZoKrates/ZoKrates?tag=0.8.4#b5f2263410dd1a70f0d6aa6a879b28b754c3fe11"
+dependencies = [
+ "from-pest",
+ "lazy_static",
+ "pest",
+ "pest-ast",
+ "zokrates_parser 0.3.3",
 ]
 
 [[package]]
@@ -6706,8 +6844,8 @@ dependencies = [
  "rand 0.4.6",
  "regex 0.2.11",
  "serde",
- "zokrates_ast",
- "zokrates_field",
+ "zokrates_ast 0.1.3",
+ "zokrates_field 0.5.2",
 ]
 
 [[package]]
