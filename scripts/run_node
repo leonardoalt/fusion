@@ -1,7 +1,7 @@
 #!/usr/bin/sh
 
-# This script requires ETH_PRIVATE_KEY, ETH_RPC_URL and TROLLUP_L1_CONTRACT to be set in the environment.
+# This script requires ETH_PRIVATE_KEY, ETH_RPC_URL and FUSION_L1_CONTRACT to be set in the environment.
 
 echo "Starting sequencer/prover..."
-$(cd trollup-sequencer && nohup cargo run --release > nohup_trollup.out)&
+$(cd fusion-sequencer && nohup cargo run --release > nohup_fusion.out)&
 sleep 2

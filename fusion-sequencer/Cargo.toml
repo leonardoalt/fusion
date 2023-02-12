@@ -1,0 +1,25 @@
+[package]
+name = "fusion-sequencer"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.66"
+clap = { version = "4.1.4", features = ["derive"] }
+ethers = { git = "https://github.com/gakonst/ethers-rs" }
+futures = "0.3.26"
+log = "0.4.17"
+tarpc = { version = "0.31", features = ["full"] }
+tokio = { version = "1.25.0", features = ["macros", "sync"] }
+fusion-l1 = { path = "../l1-verifier/out/bindings" }
+fusion-api = { path = "../fusion-api" }
+fusion-config = { path = "../fusion-config" }
+fusion-prover = { path = "../fusion-prover" }
+fusion-types = { path = "../fusion-types" }
+fusion-wallet = { path = "../fusion-wallet" }
+
+[dev-dependencies]
+anvil = { git = "https://github.com/foundry-rs/foundry" }
+hex = "0.4.3"
