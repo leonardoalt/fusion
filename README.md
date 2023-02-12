@@ -1,24 +1,23 @@
-# Fusion - the simplest zkRollup
+# Fusion zkRollup
 
-Fusion is an experimental Ethereum ZKRollup, created with the goal of being
-the simplest L2 that can be used in production. Users can make L2 transfers, as
-well as enter/exit the L2 via the L1 contract (not yet implemented).
+Fusion is an experimental Ethereum zkRollup written in Rust and focuses on
+performance, modularity, and applying cutting-edge Verifiable Computation proof
+systems.
 
-Fusion consists of an L2 sequencer, a ZK prover, and an L1 verifier smart
-contract. The sequencer keeps track of the canonical L2 state, and receives
-transactions to be included in L2 blocks. The prover takes these signed
-transactions, the old state and the new state, and builds a Zero Knowledge
-Proof (ZKP) that the state was changed accordingly, and that the transaction
-signature matches the sender. The verifier smart contract is deployed on
-Ethereum and provides the canonical L2 state root. It takes ZKPs of L2
-transactions, verifies them, and updates the L2 state root accordingly.
+Fusion is conceptually based on [the original zkRollup](https://github.com/barryWhiteHat/roll_up/).
+We use [Zokrates](https://zokrates.github.io) for all circuits which provides
+high level abstractions for all algorithms and multiple backends.  Currently
+the prover builds a Groth16 SNARK for each transaction in parallel, and there
+is no batching.  Together with ZoKrates we are experimenting with
+[Nova](https://github.com/microsoft/Nova) recursive proofs to enable incredibly
+fast transaction batching and compression.
 
 ## Tool Suite
 
 This repository contains the entire Fusion tool suite:
 
 - `circuits`: the SNARK state and signature verification ZoKrates code.
-- `fusion-prover`: the prover that takes a signed transaction and builds a ZKP of
+- `fusion-prover`: the prover that takes a signed transaction and builds a SNARK of
   state changes and signature.
 - `fusion-sequencer`: the Fusion node. Receives L2 transactions via RPC, builds
   blocks, and sends them for verification on L1.
@@ -29,7 +28,7 @@ This repository contains the entire Fusion tool suite:
 ## Cloning the repository
 
 ```
-git clone --recurse-submodules https://github.com/fusion/fusion.git
+git clone --recurse-submodules https://github.com/leonardoalt/fusion.git
 ```
 
 If you already cloned the repository without submodules, you can run the command below to initialize it:
@@ -77,12 +76,12 @@ path goes left, 1 means it goes right.
 
 The tree also contains some optimizations, such as:
 
-- For the sparse branches of tree, we keep all nodes as 0, instead of hash(hash(...(0))) (such as in the beacon chain [deposit contract](https://github.com/axic/eth2-deposit-contract/)).
+- For the sparse branches of tree, we keep all nodes as 0, instead of `hash(hash(...(0)))` (such as in the Ethereum Beacon Chain [Deposit Contract](https://github.com/axic/eth2-deposit-contract/)).
 - When merging two nodes, we apply:
-    - merge(0, 0) = 0
-    - merge(L, 0) = L, if L != 0
-    - merge(0, R) = R, if R != 0
-    - merge(L, R) = hash(L, R), if L != 0 and R != 0
+    - `merge(0, 0) = 0`
+    - `merge(L, 0) = L, if L != 0`
+    - `merge(0, R) = R, if R != 0`
+    - `merge(L, R) = hash(L, R), if L != 0 and R != 0`
 - The rules above may lead to collisions if the contents of two leaves are the same. To avoid that, we hash the leaf's contents together with its unique index.
 
 The used hash is Poseidon in order to be SNARK friendly.
@@ -91,9 +90,10 @@ The used hash is Poseidon in order to be SNARK friendly.
 
 Since we need to verify signatures inside zkSNARKs, we use EdDSA with the [Baby Jubjub Elliptic Curve](https://eips.ethereum.org/EIPS/eip-2494).
 A public key (PK) consists of a curve point where `x` and `y` are elements of
-the field used by Baby Jubjub. The PK can be compressed into 256 bits, a
-Fusion address.  This means that Fusion accounts are not compatible with
-Ethereum accounts.
+the field used by Baby Jubjub. The PK can be compressed into 256 bits, which
+does not necessarily fit in the field.
+Given a public key `(x, y)`, its Fusion address consists of `poseidon(x, y)`.
+This means that Fusion accounts are not compatible with Ethereum accounts.
 
 ## Execution
 
@@ -114,11 +114,11 @@ There are no VM and smart contracts at the moment.
 - [x] L1 verifier
 - [x] L2 block verification using L1 verifier
 - [x] Baby Jubjub CLI wallet
+- [x] L2 enter via L1 deposit
+- [x] L2 exit via L1 withdraw
 
 ### TODO
 
-- [ ] L2 enter via L1 deposit
-- [ ] L2 exit via L1 withdraw
 - [ ] Compress transaction proofs into a batch proof
 - [ ] Separate mempool from sequencer
 - [ ] Reconstruct L2 state from scratch by re-playing block submissions to L1 verifier
