@@ -1,10 +1,10 @@
-# Trollup - the simplest zkRollup
+# Fusion - the simplest zkRollup
 
-Trollup is an experimental Ethereum ZKRollup, created with the goal of being
+Fusion is an experimental Ethereum ZKRollup, created with the goal of being
 the simplest L2 that can be used in production. Users can make L2 transfers, as
 well as enter/exit the L2 via the L1 contract (not yet implemented).
 
-Trollup consists of an L2 sequencer, a ZK prover, and an L1 verifier smart
+Fusion consists of an L2 sequencer, a ZK prover, and an L1 verifier smart
 contract. The sequencer keeps track of the canonical L2 state, and receives
 transactions to be included in L2 blocks. The prover takes these signed
 transactions, the old state and the new state, and builds a Zero Knowledge
@@ -15,21 +15,21 @@ transactions, verifies them, and updates the L2 state root accordingly.
 
 ## Tool Suite
 
-This repository contains the entire Trollup tool suite:
+This repository contains the entire Fusion tool suite:
 
 - `circuits`: the SNARK state and signature verification ZoKrates code.
-- `trollup-prover`: the prover that takes a signed transaction and builds a ZKP of
+- `fusion-prover`: the prover that takes a signed transaction and builds a ZKP of
   state changes and signature.
-- `trollup-sequencer`: the Trollup node. Receives L2 transactions via RPC, builds
+- `fusion-sequencer`: the Fusion node. Receives L2 transactions via RPC, builds
   blocks, and sends them for verification on L1.
-- `l1-verifier`: the Trollup contracts deployed on L1. These contracts provide
+- `l1-verifier`: the Fusion contracts deployed on L1. These contracts provide
   block verification and canonical state root updates for L2 nodes.
-- `trollup-wallet`: a simple CLI interface to sign/send Trollup transactions.
+- `fusion-wallet`: a simple CLI interface to sign/send Fusion transactions.
 
 ## Cloning the repository
 
 ```
-git clone --recurse-submodules https://github.com/trollup/trollup.git
+git clone --recurse-submodules https://github.com/fusion/fusion.git
 ```
 
 If you already cloned the repository without submodules, you can run the command below to initialize it:
@@ -39,7 +39,7 @@ git submodule update --init --recursive
 
 ## Dependencies
 
-Trollup requires the following installed:
+Fusion requires the following installed:
 - [Rust](https://www.rust-lang.org/learn/get-started)
 - [foundry](https://github.com/foundry-rs/foundry)
 - [Zokrates](https://zokrates.github.io)
@@ -53,7 +53,7 @@ cd circuits && make
 
 ### Building the sequencer (has prover as dependency)
 ```
-cargo build --release --bin trollup-sequencer
+cargo build --release --bin fusion-sequencer
 ```
 
 ### Running
@@ -92,7 +92,7 @@ The used hash is Poseidon in order to be SNARK friendly.
 Since we need to verify signatures inside zkSNARKs, we use EdDSA with the [Baby Jubjub Elliptic Curve](https://eips.ethereum.org/EIPS/eip-2494).
 A public key (PK) consists of a curve point where `x` and `y` are elements of
 the field used by Baby Jubjub. The PK can be compressed into 256 bits, a
-Trollup address.  This means that Trollup accounts are not compatible with
+Fusion address.  This means that Fusion accounts are not compatible with
 Ethereum accounts.
 
 ## Execution

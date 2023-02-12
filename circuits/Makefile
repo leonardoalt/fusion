@@ -1,5 +1,5 @@
 all:
-	zokrates compile -i trollup.zok
+	zokrates compile -i fusion.zok
 
 setup:
 	zokrates setup

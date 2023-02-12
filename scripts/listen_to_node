@@ -1,4 +1,4 @@
 #!/usr/bin/sh
 
 echo "Listening to sequencer/prover..."
-tail -f "trollup-sequencer/nohup_trollup.out"
+tail -f "fusion-sequencer/nohup_fusion.out"

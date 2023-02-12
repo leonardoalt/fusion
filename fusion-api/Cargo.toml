@@ -1,0 +1,13 @@
+[package]
+name = "fusion-api"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ethers-core = { git = "https://github.com/gakonst/ethers-rs" }
+poseidon-rs = "0.0.8"
+serde = "1.0.152"
+tarpc = { version = "0.31", features = ["full"] }
+fusion-types = { path = "../fusion-types" }

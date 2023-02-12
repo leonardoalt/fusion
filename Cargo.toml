@@ -1,9 +1,9 @@
 [workspace]
 members = [
-	"trollup-api",
-	"trollup-config",
-	"trollup-prover",
-	"trollup-sequencer",
-	"trollup-types",
-	"trollup-wallet"
+	"fusion-api",
+	"fusion-config",
+	"fusion-prover",
+	"fusion-sequencer",
+	"fusion-types",
+	"fusion-wallet"
 ]
