@@ -23,6 +23,10 @@ jobs:
           ~/.cargo/git
           target
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+    - name: Compile circuit
+      run: cd circuits && zokrates compile -i fusion.zok
+    - name: Compute trusted setup
+      run: cd circuits && zokrates setup
     - name: Set up nightly
       run: rustup default nightly-2023-01-03
     - name: Install dependencies
