@@ -102,7 +102,7 @@ dependencies = [
 [[package]]
 name = "anvil"
 version = "0.1.0"
-source = "git+https://github.com/foundry-rs/foundry#550c548a7aa94a45c1f448071307108867848429"
+source = "git+https://github.com/foundry-rs/foundry#bca5d474f82c07651f853f994cfe2655747ab180"
 dependencies = [
  "anvil-core",
  "anvil-rpc",
@@ -146,7 +146,7 @@ dependencies = [
 [[package]]
 name = "anvil-core"
 version = "0.1.0"
-source = "git+https://github.com/foundry-rs/foundry#550c548a7aa94a45c1f448071307108867848429"
+source = "git+https://github.com/foundry-rs/foundry#bca5d474f82c07651f853f994cfe2655747ab180"
 dependencies = [
  "bytes",
  "ethers-core",
@@ -165,7 +165,7 @@ dependencies = [
 [[package]]
 name = "anvil-rpc"
 version = "0.1.0"
-source = "git+https://github.com/foundry-rs/foundry#550c548a7aa94a45c1f448071307108867848429"
+source = "git+https://github.com/foundry-rs/foundry#bca5d474f82c07651f853f994cfe2655747ab180"
 dependencies = [
  "serde",
  "serde_json",
@@ -174,7 +174,7 @@ dependencies = [
 [[package]]
 name = "anvil-server"
 version = "0.1.0"
-source = "git+https://github.com/foundry-rs/foundry#550c548a7aa94a45c1f448071307108867848429"
+source = "git+https://github.com/foundry-rs/foundry#bca5d474f82c07651f853f994cfe2655747ab180"
 dependencies = [
  "anvil-rpc",
  "async-trait",
@@ -2349,7 +2349,7 @@ checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 [[package]]
 name = "forge"
 version = "0.2.0"
-source = "git+https://github.com/foundry-rs/foundry#550c548a7aa94a45c1f448071307108867848429"
+source = "git+https://github.com/foundry-rs/foundry#bca5d474f82c07651f853f994cfe2655747ab180"
 dependencies = [
  "comfy-table",
  "ethers",
@@ -2378,7 +2378,7 @@ dependencies = [
 [[package]]
 name = "forge-fmt"
 version = "0.2.0"
-source = "git+https://github.com/foundry-rs/foundry#550c548a7aa94a45c1f448071307108867848429"
+source = "git+https://github.com/foundry-rs/foundry#bca5d474f82c07651f853f994cfe2655747ab180"
 dependencies = [
  "ethers-core",
  "foundry-config",
@@ -2400,7 +2400,7 @@ dependencies = [
 [[package]]
 name = "foundry-common"
 version = "0.1.0"
-source = "git+https://github.com/foundry-rs/foundry#550c548a7aa94a45c1f448071307108867848429"
+source = "git+https://github.com/foundry-rs/foundry#bca5d474f82c07651f853f994cfe2655747ab180"
 dependencies = [
  "atty",
  "clap 4.1.4",
@@ -2429,7 +2429,7 @@ dependencies = [
 [[package]]
 name = "foundry-config"
 version = "0.2.0"
-source = "git+https://github.com/foundry-rs/foundry#550c548a7aa94a45c1f448071307108867848429"
+source = "git+https://github.com/foundry-rs/foundry#bca5d474f82c07651f853f994cfe2655747ab180"
 dependencies = [
  "Inflector",
  "dirs-next",
@@ -2458,7 +2458,7 @@ dependencies = [
 [[package]]
 name = "foundry-evm"
 version = "0.2.0"
-source = "git+https://github.com/foundry-rs/foundry#550c548a7aa94a45c1f448071307108867848429"
+source = "git+https://github.com/foundry-rs/foundry#bca5d474f82c07651f853f994cfe2655747ab180"
 dependencies = [
  "auto_impl 1.0.1",
  "bytes",
@@ -2490,7 +2490,7 @@ dependencies = [
 [[package]]
 name = "foundry-macros"
 version = "0.1.0"
-source = "git+https://github.com/foundry-rs/foundry#550c548a7aa94a45c1f448071307108867848429"
+source = "git+https://github.com/foundry-rs/foundry#bca5d474f82c07651f853f994cfe2655747ab180"
 dependencies = [
  "ethers-core",
  "foundry-common",
@@ -2500,7 +2500,7 @@ dependencies = [
 [[package]]
 name = "foundry-macros-impl"
 version = "0.0.0"
-source = "git+https://github.com/foundry-rs/foundry#550c548a7aa94a45c1f448071307108867848429"
+source = "git+https://github.com/foundry-rs/foundry#bca5d474f82c07651f853f994cfe2655747ab180"
 dependencies = [
  "proc-macro2 1.0.51",
  "quote 1.0.23",
@@ -2510,7 +2510,7 @@ dependencies = [
 [[package]]
 name = "foundry-utils"
 version = "0.2.0"
-source = "git+https://github.com/foundry-rs/foundry#550c548a7aa94a45c1f448071307108867848429"
+source = "git+https://github.com/foundry-rs/foundry#bca5d474f82c07651f853f994cfe2655747ab180"
 dependencies = [
  "ethers-addressbook",
  "ethers-contract",
