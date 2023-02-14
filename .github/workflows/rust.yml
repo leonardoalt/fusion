@@ -19,19 +19,24 @@ jobs:
         uses: actions/cache@v3
         with:
           path: circuits/
-          key: cache-circuits-${{ hashFiles('**/out') }}
+          key: cache-circuits-${{ hashFiles('**/*.zok') }}
       - name: Compile circuit
         if: steps.cache-circuits.outputs.cache-hit != 'true'
-        run: cd circuits && zokrates compile -i fusion.zok
+        run: cd circuits && make
       - name: Compute trusted setup
         if: steps.cache-circuits.outputs.cache-hit != 'true'
-        run: cd circuits && zokrates setup
+        run: cd circuits && make setup
+      - name: Generate Solidity verifier
+        if: steps.cache-circuits.outputs.cache-hit != 'true'
+        run: cd circuits && make verifier
 
   build:
     needs: build_circuit
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: recursive
       - name: ⚡ Cache Cargo
         uses: actions/cache@v3
         with:
@@ -51,11 +56,15 @@ jobs:
         uses: actions/cache/restore@v3
         with:
           path: circuits/
-          key: cache-circuits-${{ hashFiles('**/out') }}
+          key: cache-circuits-${{ hashFiles('**/*.zok') }}
+      - name: Compile contracts
+        run: cd l1-verifier && make
+      - name: Format contract Rust bindings
+        run: cd l1-verifier/out/bindings && cargo fmt
       - name: Build
-        run: cargo build
+        run: cargo build --release
       - name: Run tests
-        run: cargo test
+        run: cargo test --release -- --nocapture
       - name: Lint
         run: cargo clippy --all --all-features -- -D warnings
       - name: Format
