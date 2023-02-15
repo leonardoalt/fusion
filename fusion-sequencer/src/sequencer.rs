@@ -233,7 +233,6 @@ mod test {
         assert_eq!(acc_2.nonce, 3.into());
     }
 
-    #[ignore]
     #[tokio::test(flavor = "multi_thread")]
     async fn end_to_end_simple() {
         let anvil_config = NodeConfig::test();
@@ -297,7 +296,6 @@ mod test {
         assert_eq!(contract.root().call().await.unwrap(), state.root());
     }
 
-    #[ignore]
     #[tokio::test(flavor = "multi_thread")]
     async fn deposit() {
         let anvil_config = NodeConfig::test();
@@ -384,7 +382,6 @@ mod test {
         assert_eq!(contract.root().call().await.unwrap(), state.root());
     }
 
-    #[ignore]
     #[tokio::test(flavor = "multi_thread")]
     async fn deposit_partial_claim() {
         let anvil_config = NodeConfig::test();
@@ -473,7 +470,6 @@ mod test {
         assert_eq!(contract.root().call().await.unwrap(), state.root());
     }
 
-    #[ignore]
     #[tokio::test(flavor = "multi_thread")]
     async fn deposit_transfer_withdraw_flow() {
         let anvil_config = NodeConfig::test();
