@@ -125,7 +125,9 @@ into progress.
 
 ## Roadmap (and TODO items)
 
-### Done
+### v1. Batch proofs - production after this!
+
+#### Done
 
 - [x] L2 RPC node
 - [x] L2 sequencer
@@ -141,7 +143,7 @@ into progress.
 - [x] L2 enter via L1 deposit
 - [x] L2 exit via L1 withdraw
 
-### TODO
+#### TODO
 
 - [ ] Transaction fees
 - [ ] Compress transaction proofs into a batch proof (in progress using Nova)
@@ -150,3 +152,14 @@ into progress.
 - [ ] Multi-key Merkle proofs
 - [ ] Forced transactions
 - [ ] Sequencer auction
+
+### v2. Execution
+
+#### TODO
+
+- [ ] Integrate an extremely simple VM. Options:
+    - High level VM in ZoKrates (similar to [TinyZKEVM](https://github.com/leonardoalt/tinyzkevm)), using the SuperNova backend.
+    - Low level VM in [powdr](https://github.com/chriseth/powdr), either using STARKs+Nova (extension of Hermez) or Halo2+Nova (extension of PSE/Scroll).
+    - Mix of the two above, using powdr as a backend in ZoKrates.
+- [ ] Subset of the EVM. Expand whatever idea is chosen from the previous item with EVM opcodes.
+- [ ] Full EVM. At this point I hope ZoKrates+SuperNova has good performance so I can write everything in a high level.
