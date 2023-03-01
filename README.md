@@ -12,6 +12,9 @@ is no batching.  Together with ZoKrates we are experimenting with
 [Nova](https://github.com/microsoft/Nova) recursive proofs to enable incredibly
 fast transaction batching and compression.
 
+See the end of this document for the full list of roadmap items, ideas, and
+concrete tasks.
+
 ## Tool Suite
 
 This repository contains the entire Fusion tool suite:
