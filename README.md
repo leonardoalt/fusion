@@ -1,8 +1,8 @@
 # Fusion zkRollup
 
-Fusion is an experimental Ethereum zkRollup written in Rust and focuses on
-performance, modularity, and applying cutting-edge Verifiable Computation proof
-systems.
+Fusion is an experimental progressive Ethereum zkRollup written in Rust and
+focuses on performance, modularity, and applying cutting-edge Verifiable
+Computation proof systems.
 
 Fusion is conceptually based on [the original zkRollup](https://github.com/barryWhiteHat/roll_up/).
 We use [Zokrates](https://zokrates.github.io) for all circuits which provides
@@ -57,13 +57,23 @@ cargo build --release --bin fusion-sequencer
 
 ### Running
 
-1. Set `ETH_PRIVATE_KEY` and `ETH_FROM` to the private and public keys that will deploy and use the L1 contract.
-2. Set `ETH_RPC_URL` to an Ethereum RPC endpoint. Since we are using `anvil` here, this is usually `http://localhost:8545`.
+The easiest way to see everything running is via Rust tests with
+
+```bash
+cargo test --release -- --nocapture
+```
+
+For more details see the tests in `fusion-sequencer`.
+If you want to run it in production style, you may want to follow this list:
+
+1. Set `eth_private_key` in `fusion.toml` to the private key that will deploy the contract and submit L2 blocks.
+2. Set `eth_rpc_url` in `fusion.toml` to an Ethereum RPC endpoint. Since we are using `anvil` here, this is usually `http://localhost:8545`.
 3. Run `source ./scripts/run_anvil_and_deploy_contract` which starts `anvil` and deploys the contract.
-4. Run `./scripts/run_node` to start the node.
-5. You can run `./scripts/listen_to_node` to check the ongoing output from the node.
-6. Now you can also run `./scripts/send_random_tx` to send transactions.
-7. To stop everything, run `./scripts/kill_node` and `./scripts/kill_anvil`.
+4. Set `fusion_l1_contract` in `fusion.toml` with the address of the deployed contract.
+5. Run `./scripts/run_node` to start the node.
+6. You can run `./scripts/listen_to_node` to check the ongoing output from the node.
+7. Now you can also run `./scripts/send_random_tx` to send transactions.
+8. To stop everything, run `./scripts/kill_node` and `./scripts/kill_anvil`.
 
 ## State
 
@@ -99,6 +109,20 @@ This means that Fusion accounts are not compatible with Ethereum accounts.
 
 There are no VM and smart contracts at the moment.
 
+## Modularity
+
+Fusion is designed to be highly modular and extensible. For example, here are a
+few things that can be modified quite easily:
+
+- the sequencer's block building strategy
+- the RPC node
+- the L2 state data structures
+- the proving backend (see branch `nova`)
+- the signature algorithm
+
+This enables fast experimental iterations on all fronts which can quickly turn
+into progress.
+
 ## Roadmap (and TODO items)
 
 ### Done
@@ -119,7 +143,10 @@ There are no VM and smart contracts at the moment.
 
 ### TODO
 
-- [ ] Compress transaction proofs into a batch proof
+- [ ] Transaction fees
+- [ ] Compress transaction proofs into a batch proof (in progress using Nova)
 - [ ] Separate mempool from sequencer
 - [ ] Reconstruct L2 state from scratch by re-playing block submissions to L1 verifier
 - [ ] Multi-key Merkle proofs
+- [ ] Forced transactions
+- [ ] Sequencer auction
