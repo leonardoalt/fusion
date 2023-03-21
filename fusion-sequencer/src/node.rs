@@ -20,7 +20,7 @@ impl Node {
             .interval(Duration::from_millis(10u64));
         let chain_id: u64 = provider.get_chainid().await?.as_u64();
 
-        let wallet: LocalWallet = SecretKey::from_be_bytes(&priv_key)
+        let wallet: LocalWallet = SecretKey::from_slice(&priv_key)
             .expect("did not get private key")
             .into();
         info!("Wallet with address: {:?}", wallet.address().clone());
