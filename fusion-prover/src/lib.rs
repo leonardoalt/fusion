@@ -18,6 +18,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::from_reader;
 use serde_tuple::*;
 
+use rand_0_8::rngs::StdRng;
+use rand_0_8::SeedableRng;
+
 use zokrates_abi::{parse_strict, Encode, Inputs};
 use zokrates_ark::Ark;
 use zokrates_ast::ir::{self, ProgEnum, Witness};
@@ -164,7 +167,8 @@ impl Prover {
             .read_to_end(&mut pk)
             .map_err(|why| format!("Could not read {}: {}", pk_path.display(), why))?;
 
-        let proof: Proof<Bn128Field, G16> = Ark::generate_proof(prog, witness, pk);
+        let mut rng = StdRng::from_entropy();
+        let proof: Proof<Bn128Field, G16> = Ark::generate_proof(prog, witness, pk, &mut rng);
         let ret = proof.to_fusion_l1_tx();
 
         /*
@@ -179,9 +183,9 @@ impl Prover {
         Ok(ret)
     }
 
-    fn compute_witness<I: IntoIterator<Item = ir::Statement<Bn128Field>>>(
+    fn compute_witness<'a, I: IntoIterator<Item = ir::Statement<'a, Bn128Field>>>(
         config: &Config,
-        prog: ir::ProgIterator<Bn128Field, I>,
+        prog: ir::ProgIterator<'a, Bn128Field, I>,
         tx: &SignedTx,
         pre_state: &State,
         post_state: &State,
