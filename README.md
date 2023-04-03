@@ -44,16 +44,27 @@ git submodule update --init --recursive
 Fusion requires the following installed:
 - [Rust](https://www.rust-lang.org/learn/get-started)
 - [foundry](https://github.com/foundry-rs/foundry)
-- [Zokrates](https://zokrates.github.io)
+- [Zokrates 0.8.5](https://zokrates.github.io)
 
 ### Building the circuits
+ZoKrates' latest release 0.8.5 is specifically required for this step.
 ```
 cd circuits && make
 ```
 
-**Note:** the current circuits require at least 32GB of RAM to compile.
+**Note:** the current circuits require at least 16GB of RAM to compile.
+
+### Building the L1 SNARK verifier
+
+This step requires the circuit step above.
+
+```
+cd l1-verifier && make
+```
 
 ### Building the sequencer (has prover as dependency)
+This step requires the L1 verifier step above.
+
 ```
 cargo build --release --bin fusion-sequencer
 ```

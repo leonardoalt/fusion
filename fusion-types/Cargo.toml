@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 babyjubjub-rs = { git = "https://github.com/leonardoalt/babyjubjub-rs" }
-ethers-core = { git = "https://github.com/gakonst/ethers-rs" }
+ethers-core = { version = "2" }
 ff = { package="ff_ce" , version= "0.11", features = ["derive"] }
 num-bigint = "0.4.3"
 poseidon-rs = "0.0.8"

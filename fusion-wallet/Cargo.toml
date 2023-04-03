@@ -9,7 +9,7 @@ edition = "2021"
 anyhow = "1.0.66"
 babyjubjub-rs = { git = "https://github.com/leonardoalt/babyjubjub-rs" }
 clap = { version = "4.1.4", features = ["derive"] }
-ethers-core = { git = "https://github.com/gakonst/ethers-rs" }
+ethers-core = { version = "2" }
 num-bigint = "0.4.3"
 tarpc = { version = "0.31", features = ["full"] }
 tokio = { version = "1.25.0", features = ["full"] }
