@@ -23,13 +23,14 @@ use rand_0_8::SeedableRng;
 
 use zokrates_abi::{parse_strict, Encode, Inputs};
 use zokrates_ark::Ark;
-use zokrates_ast::ir::{self, ProgEnum, Witness};
+use zokrates_ast::ir::{self, Parameter, ProgEnum, Solver, Witness};
 use zokrates_ast::typed::abi::Abi;
 use zokrates_field::Bn128Field;
 use zokrates_proof_systems::*;
 
+use std::borrow::Borrow;
 use std::fs::File;
-use std::io::{BufReader, Read};
+use std::io::BufReader;
 use std::path::Path;
 
 #[derive(Serialize_tuple, Deserialize_tuple, Debug)]
@@ -155,20 +156,24 @@ impl Prover {
         };
         let prog = prog.collect();
 
-        let witness = Self::compute_witness(config, prog.clone(), tx, pre_state, post_state)?;
+        let witness = Self::compute_witness(
+            config,
+            prog.statements.iter(),
+            &prog.arguments,
+            &prog.solvers,
+            tx,
+            pre_state,
+            post_state,
+        )?;
 
         let pk_path = Path::new(&config.proving_key_path);
         let pk_file = File::open(pk_path)
             .map_err(|why| format!("Could not open {}: {}", pk_path.display(), why))?;
 
-        let mut pk: Vec<u8> = Vec::new();
-        let mut pk_reader = BufReader::new(pk_file);
-        pk_reader
-            .read_to_end(&mut pk)
-            .map_err(|why| format!("Could not read {}: {}", pk_path.display(), why))?;
+        let pk_reader = BufReader::new(pk_file);
 
         let mut rng = StdRng::from_entropy();
-        let proof: Proof<Bn128Field, G16> = Ark::generate_proof(prog, witness, pk, &mut rng);
+        let proof: Proof<Bn128Field, G16> = Ark::generate_proof(prog, witness, pk_reader, &mut rng);
         let ret = proof.to_fusion_l1_tx();
 
         /*
@@ -183,9 +188,11 @@ impl Prover {
         Ok(ret)
     }
 
-    fn compute_witness<'a, I: IntoIterator<Item = ir::Statement<'a, Bn128Field>>>(
+    fn compute_witness<'a, S: Borrow<ir::Statement<'a, Bn128Field>>>(
         config: &Config,
-        prog: ir::ProgIterator<'a, Bn128Field, I>,
+        statements: impl Iterator<Item = S>,
+        arguments: &[Parameter],
+        solvers: &[Solver<'a, Bn128Field>],
         tx: &SignedTx,
         pre_state: &State,
         post_state: &State,
@@ -204,7 +211,7 @@ impl Prover {
         let inputs = CircuitInput::new(tx, pre_state, post_state);
         //println!("\n\n{}\n\n", serde_json::to_string(&inputs).unwrap());
 
-        let arguments = parse_strict(
+        let witness = parse_strict(
             serde_json::to_string(&inputs).unwrap().as_str(),
             signature.inputs,
         )
@@ -214,11 +221,15 @@ impl Prover {
 
         let interpreter = zokrates_interpreter::Interpreter::default();
 
-        let _public_inputs = prog.public_inputs();
-
-        let encoded = arguments.encode();
+        let encoded = witness.encode();
         let witness = interpreter
-            .execute_with_log_stream(prog, &encoded, &mut std::io::stdout())
+            .execute_with_log_stream(
+                &encoded,
+                statements,
+                arguments,
+                solvers,
+                &mut std::io::stdout(),
+            )
             .map_err(|e| format!("Execution failed: {e}"))?;
 
         // Uncomment to see the witness verification result values
