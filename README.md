@@ -44,12 +44,12 @@ git submodule update --init --recursive
 Fusion requires the following installed:
 - [Rust](https://www.rust-lang.org/learn/get-started)
 - [foundry](https://github.com/foundry-rs/foundry)
-- [Zokrates 0.8.5](https://zokrates.github.io)
+- [Zokrates 0.8.7](https://zokrates.github.io)
 
 ### Building the circuits
-ZoKrates' latest release 0.8.5 is specifically required for this step.
+ZoKrates' latest release 0.8.7 is specifically required for this step.
 ```
-cd circuits && make
+cd circuits && make && make verifier
 ```
 
 **Note:** the current circuits require at least 16GB of RAM to compile.
