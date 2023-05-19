@@ -12,6 +12,8 @@ pub fn poseidon(args: &[U256]) -> U256 {
         .to_u256()
 }
 
+type Fr = PallasField;
+
 #[derive(Default, Clone)]
 pub struct PoseidonHasher(Vec<Fr>);
 
@@ -37,7 +39,7 @@ mod test {
         assert_eq!(
             hasher.finish(),
             U256::from_dec_str(
-                "12583541437132735734108669866114103169564651237895298778035846191048104863326"
+                "15810191198056942845547216612472790214149579631329254380720106039426785132417"
             )
             .unwrap()
         );

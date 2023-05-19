@@ -7,7 +7,8 @@ edition = "2021"
 
 [dependencies]
 ethers-core = { version = "2" }
-poseidon-rs = "0.0.8"
+#poseidon-rs = "0.0.8"
+poseidon-rs = { git = "https://github.com/leonardoalt/poseidon-rs", branch = "pallas" }
 serde = "1.0.152"
 tarpc = { version = "0.31", features = ["full"] }
 fusion-types = { path = "../fusion-types" }

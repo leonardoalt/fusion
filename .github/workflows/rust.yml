@@ -26,9 +26,6 @@ jobs:
       - name: Compute trusted setup
         if: steps.cache-circuits.outputs.cache-hit != 'true'
         run: cd circuits && make setup
-      - name: Generate Solidity verifier
-        if: steps.cache-circuits.outputs.cache-hit != 'true'
-        run: cd circuits && make verifier
 
   build:
     needs: build_circuit
@@ -47,8 +44,6 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - name: Set up Rust nightly
-        run: rustup default nightly-2023-01-03
       - name: Install dependencies
         run: rustup component add clippy rustfmt
       - name: Restore cached circuits

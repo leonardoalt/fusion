@@ -1,12 +1,8 @@
 all:
-	zokrates compile -i fusion.zok
+	zokrates compile -i fusion.zok -c pallas
 
 setup:
-	zokrates setup
-
-verifier:
-	zokrates export-verifier
-	sed -i -e '204,217d' verifier.sol
+	zokrates nova setup
 
 clean:
-	rm abi.json out out.r1cs out.wtns witness verification.key proof.json verifier.sol
+	rm abi.json out out.r1cs nova.params
