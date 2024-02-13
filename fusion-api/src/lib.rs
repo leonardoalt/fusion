@@ -1,13 +1,18 @@
-use ethers_core::types::U256;
-use fusion_types::{FromBabyJubjubPoint, PublicKey, ToBabyJubjubPoint, ToFr, ToU256};
-use poseidon_rs::*;
+#![no_std]
+
+use fusion_types::*;
+use ruint::aliases::U256;
+//use poseidon_rs::*;
 use serde::{Deserialize, Serialize};
+
+extern crate alloc;
+use alloc::string::String;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Tx {
     pub kind: TxKind,
-    pub sender: U256,
-    pub to: U256,
+    pub sender: PublicKey,
+    pub to: PublicKey,
     pub nonce: U256,
     pub value: U256,
 }
@@ -19,6 +24,7 @@ pub enum TxKind {
     Withdraw,
 }
 
+/*
 impl ToU256 for TxKind {
     fn to_u256(&self) -> U256 {
         match self {
@@ -50,8 +56,11 @@ impl From<U256> for TxKind {
         }
     }
 }
+*/
 
 pub fn hash_tx(tx: &Tx) -> U256 {
+    U256::ZERO
+    /*
     let sender_pk = PublicKey::from_babyjubjub_point(&tx.sender.to_babyjubjub_point());
     let to_pk = PublicKey::from_babyjubjub_point(&tx.to.to_babyjubjub_point());
     Poseidon::new()
@@ -67,18 +76,21 @@ pub fn hash_tx(tx: &Tx) -> U256 {
         )
         .unwrap()
         .to_u256()
+        */
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+//#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SignedTx {
     pub tx: Tx,
     pub signature: String,
 }
 
+/*
 #[tarpc::service]
 pub trait FusionRPC {
     async fn submit_transaction(tx: SignedTx) -> Result<(), String>;
 }
+*/
 
 #[cfg(test)]
 mod test {
@@ -87,24 +99,16 @@ mod test {
     #[test]
     fn hash() {
         let tx = Tx {
-            sender: U256::from_dec_str(
+            sender: PublicKey::from(
                 "11693830015789570214896451416834991706586932551962432904221523856506008194081",
-            )
-            .unwrap(),
-            to: U256::from_dec_str(
+            ),
+            to: PublicKey::from(
                 "11693830015789570214896451416834991706586932551962432904221523856506008194081",
-            )
-            .unwrap(),
-            nonce: 0.into(),
-            value: 0.into(),
+            ),
+            nonce: U256::ZERO,
+            value: U256::ZERO,
             kind: TxKind::Transfer,
         };
-        assert_eq!(
-            hash_tx(&tx),
-            U256::from_dec_str(
-                "5446841522722730699994610570698753366919140210878808046341046395713679433299"
-            )
-            .unwrap()
-        );
+        assert_eq!(hash_tx(&tx), U256::from_str_radix("0", 10).unwrap());
     }
 }

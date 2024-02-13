@@ -2,8 +2,10 @@
 members = [
 	"fusion-api",
 	"fusion-config",
-	"fusion-prover",
+	"fusion-state",
 	"fusion-sequencer",
 	"fusion-types",
 	"fusion-wallet"
 ]
+
+exclude = [ "fusion-powdr-verifier" ]

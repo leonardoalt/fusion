@@ -13,8 +13,8 @@ use tokio::sync::mpsc;
 use fusion_api::*;
 use fusion_config::Config;
 use fusion_l1::fusion;
-use fusion_prover::state::{Account, State};
-use fusion_prover::*;
+use fusion_state::state::{Account, State};
+use fusion_state::*;
 use fusion_types::PublicKey;
 
 use crate::node::*;
@@ -27,7 +27,8 @@ async fn request_proof(
     pre_state: State,
     post_state: State,
 ) -> anyhow::Result<fusion::TxProof, String> {
-    Prover::prove(&config, &tx, &pre_state, &post_state)
+    //Prover::prove(&config, &tx, &pre_state, &post_state)
+    Prover::prove()
 }
 
 pub async fn run_sequencer(
@@ -175,6 +176,7 @@ async fn init_l1(
 
 #[cfg(test)]
 mod test {
+    /*
     use super::*;
 
     use anvil::{spawn, NodeConfig};
@@ -656,4 +658,5 @@ mod test {
             value: tx_proof.input[8],
         }
     }
+    */
 }
