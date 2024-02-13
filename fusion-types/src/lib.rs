@@ -7,7 +7,7 @@ use alloc::string::String;
 use ruint::aliases::U256;
 
 /// The Fusion private key.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Eq, PartialEq, Clone, Debug, Serialize, Deserialize)]
 pub struct PrivateKey(pub U256);
 
 impl From<String> for PrivateKey {
@@ -28,7 +28,7 @@ impl From<U256> for PrivateKey {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Eq, PartialEq, Clone, Debug, Serialize, Deserialize)]
 pub struct PublicKey(pub U256);
 
 impl From<String> for PublicKey {

@@ -12,7 +12,7 @@ use tokio::sync::mpsc;
 
 use fusion_api::*;
 use fusion_config::Config;
-use fusion_l1::fusion;
+//use fusion_l1::fusion;
 use fusion_state::state::{Account, State};
 use fusion_state::*;
 use fusion_types::PublicKey;
@@ -26,11 +26,13 @@ async fn request_proof(
     tx: SignedTx,
     pre_state: State,
     post_state: State,
-) -> anyhow::Result<fusion::TxProof, String> {
+//) -> anyhow::Result<fusion::TxProof, String> {
+) -> anyhow::Result<(), String> {
     //Prover::prove(&config, &tx, &pre_state, &post_state)
     Prover::prove()
 }
 
+/*
 pub async fn run_sequencer(
     config: &Config,
     mut rx: mpsc::Receiver<SignedTx>,
@@ -104,12 +106,12 @@ pub async fn run_sequencer(
 
     Ok(())
 }
+*/
 
 fn validate_tx(state: &State, tx: &SignedTx) -> anyhow::Result<()> {
     verify_tx_signature(tx)?;
 
-    let sender_pk: PublicKey = tx.tx.sender.into();
-    let sender_addr = sender_pk.address();
+    let sender_addr = tx.tx.sender.address();
 
     let account = state.get(&sender_addr);
     if matches!(tx.tx.kind, TxKind::Transfer) && tx.tx.sender == tx.tx.to {
@@ -126,11 +128,9 @@ fn validate_tx(state: &State, tx: &SignedTx) -> anyhow::Result<()> {
 }
 
 fn apply_tx(mut state: State, tx: &Tx) -> State {
-    let sender_pk: PublicKey = tx.sender.into();
-    let sender_addr = sender_pk.address();
+    let sender_addr = tx.sender.address();
 
-    let to_pk: PublicKey = tx.to.into();
-    let to_addr = to_pk.address();
+    let to_addr = tx.to.address();
 
     let account_sender = state.get(&sender_addr);
     let account_to = state.get(&to_addr);
@@ -153,13 +153,15 @@ fn apply_tx(mut state: State, tx: &Tx) -> State {
 }
 
 fn verify_tx_signature(signed_tx: &SignedTx) -> anyhow::Result<()> {
-    fusion_wallet::verify_tx_signature(signed_tx)
+    Ok(())
+    //fusion_wallet::verify_tx_signature(signed_tx)
 }
 
 fn init_mempool(_path: &Path) -> MemPool {
     Arc::new(Mutex::new(vec![]))
 }
 
+/*
 async fn init_l1(
     config: &Config,
 ) -> anyhow::Result<fusion::Fusion<ethers::middleware::SignerMiddleware<Provider<Http>, LocalWallet>>>
@@ -173,6 +175,7 @@ async fn init_l1(
 
     Ok(l1_contract)
 }
+*/
 
 #[cfg(test)]
 mod test {

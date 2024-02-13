@@ -14,6 +14,7 @@ use std::net::{IpAddr, SocketAddr};
 #[derive(Clone)]
 struct FusionServer(SocketAddr, mpsc::Sender<SignedTx>);
 
+/*
 #[tarpc::server]
 impl FusionRPC for FusionServer {
     async fn submit_transaction(
@@ -25,7 +26,9 @@ impl FusionRPC for FusionServer {
         Ok(())
     }
 }
+*/
 
+/*
 pub async fn run_server(sx: mpsc::Sender<SignedTx>, addr: String, port: u16) -> anyhow::Result<()> {
     let mut listener = tarpc::serde_transport::tcp::listen(
         &(IpAddr::V4(addr.parse().unwrap()), port),
@@ -51,3 +54,4 @@ pub async fn run_server(sx: mpsc::Sender<SignedTx>, addr: String, port: u16) -> 
 
     Ok(())
 }
+*/

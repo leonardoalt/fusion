@@ -1,8 +1,0 @@
-*.json
-out
-out.r1cs
-out.wtns
-witness
-proving.key
-verification.key
-*.sol

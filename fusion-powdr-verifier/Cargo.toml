@@ -1,0 +1,15 @@
+[package]
+name = "fusion-powdr-verifier"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+powdr-riscv-runtime = { path = "../../powdr/riscv-runtime" }
+
+ruint = { version = "1.10.1", default-features = false, features = ["serde"] }
+
+fusion-api = { path = "../fusion-api" }
+fusion-state= { path = "../fusion-state" }
+
+serde = { version = "1.0", default-features = false, features = ["alloc", "derive", "rc"] }
+serde_cbor = { version = "0.11.2", default-features = false, features = ["alloc"] }

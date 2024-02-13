@@ -1,11 +1,25 @@
 use tokio::sync::mpsc;
 
 use fusion_api::*;
+use fusion_types::*;
 use fusion_config::Config;
 
 use fusion_sequencer::sequencer::*;
 use fusion_sequencer::server::*;
 
+use ruint::aliases::U256;
+
+fn main() {
+    let tx = Tx {
+        kind: TxKind::Transfer,
+        sender: PublicKey::from("0"),
+        to: PublicKey::from("0"),
+        nonce: U256::ZERO,
+        value: U256::from_limbs([1, 0, 0, 0]),
+    };
+}
+
+/*
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let config = Config::from_file("../fusion.toml".to_string());
@@ -20,3 +34,4 @@ async fn main() -> anyhow::Result<()> {
 
     run_sequencer(&config, rx).await
 }
+*/

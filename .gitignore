@@ -1,1 +1,3 @@
 /target
+*/**/target
+fusion-powdr-verifier/Cargo.lock

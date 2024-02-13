@@ -1,0 +1,27 @@
+[package]
+name = "fusion-state"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bitmaps = { version = "3.2.0", default-features = false }
+ruint = { version = "1.10.1", default-features = false, features = ["serde"] }
+ark-ff = { version = "0.4.2", default-features = false }
+fusion-types = { path = "../fusion-types" }
+fusion-api= { path = "../fusion-api" }
+
+serde = { version = "1.0", default-features = false, features = ["alloc", "derive", "rc"] }
+serde_cbor = { version = "0.11.2", default-features = false, features = ["alloc"] }
+
+powdr-riscv-runtime = { path = "../../powdr/riscv-runtime", optional = true }
+
+#serde = "1.0.152"
+#serde_json = "1.0.61"
+#serde_tuple = "0.5.0"
+#rand_0_8 = { version = "0.8", package = "rand" }
+
+[features]
+default = []
+powdr = ["powdr-riscv-runtime"]
